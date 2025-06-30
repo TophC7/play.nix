@@ -7,10 +7,13 @@
 }:
 
 let
+  # Extend lib with play utilities
+  playLib = import ../../lib { inherit lib; };
+
   cfg = config.play.gamescoperun;
 
   # Use shared lib functions
-  inherit (lib.play) toCliArgs toEnvCommands getMonitorDefaults;
+  inherit (playLib) toCliArgs toEnvCommands getMonitorDefaults;
 
   # Get monitor defaults
   monitorDefaults = getMonitorDefaults config.play.monitors;

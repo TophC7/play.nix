@@ -46,8 +46,8 @@
       }
     )
     // {
-      homeManagerModules.play = import ./modules/home-manager.nix;
-      nixosModules.play = import ./modules/nixos.nix;
+      homeManagerModules.play = import ./modules/home;
+      nixosModules.play = import ./modules/nixos;
 
       # Default module (home-manager)
       homeManagerModules.default = self.homeManagerModules.play;

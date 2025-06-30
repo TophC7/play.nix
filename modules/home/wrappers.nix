@@ -6,10 +6,13 @@
 }:
 
 let
+  # Extend lib with play utilities
+  playLib = import ../../lib { inherit lib; };
+
   cfg = config.play.wrappers;
 
   # Use shared lib function
-  inherit (lib.play) toCliArgs;
+  inherit (playLib) toCliArgs;
 
   # Function to create a wrapper for an application
   mkWrapper =

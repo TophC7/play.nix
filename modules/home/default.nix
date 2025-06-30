@@ -4,3 +4,4 @@
     ./gamescoperun.nix
     ./wrappers.nix
   ];
+}
