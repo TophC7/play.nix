@@ -6,10 +6,10 @@
 }:
 
 let
-  cfg = config.wayming.amd;
+  cfg = config.play.amd;
 in
 {
-  options.wayming.amd = {
+  options.play.amd = {
     enable = lib.mkEnableOption "AMD GPU configuration with LACT (Linux AMD Control Tool)";
   };
 

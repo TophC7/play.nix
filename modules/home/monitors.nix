@@ -1,6 +1,6 @@
 { lib, config, ... }:
 {
-  options.wayming.monitors = lib.mkOption {
+  options.play.monitors = lib.mkOption {
     type = lib.types.listOf (
       lib.types.submodule {
         options = {
@@ -64,8 +64,8 @@
     assertions = [
       {
         assertion =
-          ((lib.length config.wayming.monitors) != 0)
-          -> ((lib.length (lib.filter (m: m.primary) config.wayming.monitors)) == 1);
+          ((lib.length config.play.monitors) != 0)
+          -> ((lib.length (lib.filter (m: m.primary) config.play.monitors)) == 1);
         message = "Exactly one monitor must be set to primary.";
       }
     ];

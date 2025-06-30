@@ -6,10 +6,10 @@
 }:
 
 let
-  cfg = config.wayming.gamemode;
+  cfg = config.play.gamemode;
 in
 {
-  options.wayming.gamemode = {
+  options.play.gamemode = {
     enable = lib.mkEnableOption "gamemode configuration for gaming optimization";
 
     settings = lib.mkOption {

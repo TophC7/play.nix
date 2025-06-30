@@ -26,27 +26,27 @@
   getMonitorDefaults = monitors: {
     WIDTH =
       let
-        pm = lib.wayming.getPrimaryMonitor monitors;
+        pm = lib.play.getPrimaryMonitor monitors;
       in
       if pm != null then pm.width else 1920;
     HEIGHT =
       let
-        pm = lib.wayming.getPrimaryMonitor monitors;
+        pm = lib.play.getPrimaryMonitor monitors;
       in
       if pm != null then pm.height else 1080;
     REFRESH_RATE =
       let
-        pm = lib.wayming.getPrimaryMonitor monitors;
+        pm = lib.play.getPrimaryMonitor monitors;
       in
       if pm != null then pm.refreshRate else 60;
     VRR =
       let
-        pm = lib.wayming.getPrimaryMonitor monitors;
+        pm = lib.play.getPrimaryMonitor monitors;
       in
       if pm != null then pm.vrr else false;
     HDR =
       let
-        pm = lib.wayming.getPrimaryMonitor monitors;
+        pm = lib.play.getPrimaryMonitor monitors;
       in
       if pm != null then pm.hdr else false;
   };

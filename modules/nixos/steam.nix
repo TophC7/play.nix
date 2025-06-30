@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.wayming.steam;
+  cfg = config.play.steam;
 
   # Default compatibility packages
   defaultCompatPackages = with pkgs; [
@@ -23,7 +23,7 @@ let
   };
 in
 {
-  options.wayming.steam = {
+  options.play.steam = {
     enable = lib.mkEnableOption "Steam with gaming optimizations";
 
     extraCompatPackages = lib.mkOption {

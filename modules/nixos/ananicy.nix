@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.wayming.ananicy;
+  cfg = config.play.ananicy;
 
   # Default extra rules for gaming processes
   defaultExtraRules = [
@@ -20,7 +20,7 @@ let
   finalExtraRules = defaultExtraRules ++ cfg.extraRules;
 in
 {
-  options.wayming.ananicy = {
+  options.play.ananicy = {
     enable = lib.mkEnableOption "ananicy process scheduler optimization";
 
     extraRules = lib.mkOption {

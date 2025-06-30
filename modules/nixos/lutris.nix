@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.wayming.lutris;
+  cfg = config.play.lutris;
 
   # Default extra packages
   defaultExtraPkgs = with pkgs; [
@@ -22,7 +22,7 @@ let
   };
 in
 {
-  options.wayming.lutris = {
+  options.play.lutris = {
     enable = lib.mkEnableOption "Install Lutris game manager";
 
     extraPkgs = lib.mkOption {

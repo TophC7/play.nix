@@ -1,5 +1,5 @@
 {
-  description = "Wayming - Gaming setup for Wayland with configurable options and working defaults";
+  description = "Play - Gaming setup for Wayland with configurable options and working defaults";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -27,10 +27,10 @@
           overlays = [ self.overlays.default ];
         };
 
-        # Extend lib with wayming utilities
+        # Extend lib with play utilities
         lib = nixpkgs.lib.extend (
           final: prev: {
-            wayming = import ./lib { lib = final; };
+            play = import ./lib { lib = final; };
           }
         );
 
@@ -46,11 +46,11 @@
       }
     )
     // {
-      homeManagerModules.wayming = import ./modules/home-manager.nix;
-      nixosModules.wayming = import ./modules/nixos.nix;
+      homeManagerModules.play = import ./modules/home-manager.nix;
+      nixosModules.play = import ./modules/nixos.nix;
 
       # Default module (home-manager)
-      homeManagerModules.default = self.homeManagerModules.wayming;
+      homeManagerModules.default = self.homeManagerModules.play;
 
       # Overlay for packages
       overlays.default = final: prev: {

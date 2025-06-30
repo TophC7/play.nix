@@ -7,13 +7,13 @@
 }:
 
 let
-  cfg = config.wayming.gamescoperun;
+  cfg = config.play.gamescoperun;
 
   # Use shared lib functions
-  inherit (lib.wayming) toCliArgs toEnvCommands getMonitorDefaults;
+  inherit (lib.play) toCliArgs toEnvCommands getMonitorDefaults;
 
   # Get monitor defaults
-  monitorDefaults = getMonitorDefaults config.wayming.monitors;
+  monitorDefaults = getMonitorDefaults config.play.monitors;
   inherit (monitorDefaults)
     WIDTH
     HEIGHT
@@ -132,7 +132,7 @@ let
 
 in
 {
-  options.wayming.gamescoperun = {
+  options.play.gamescoperun = {
     enable = lib.mkEnableOption "gamescoperun, a wrapper for gamescope";
 
     useGit = lib.mkOption {
@@ -195,12 +195,12 @@ in
     # Assertion to ensure monitors are configured if gamescoperun is enabled
     assertions = [
       {
-        assertion = cfg.enable -> (lib.length config.wayming.monitors > 0);
-        message = "wayming.gamescoperun requires at least one monitor to be configured in wayming.monitors";
+        assertion = cfg.enable -> (lib.length config.play.monitors > 0);
+        message = "play.gamescoperun requires at least one monitor to be configured in play.monitors";
       }
       {
-        assertion = cfg.enable -> (lib.length (lib.filter (m: m.primary) config.wayming.monitors) == 1);
-        message = "wayming.gamescoperun requires exactly one primary monitor to be configured";
+        assertion = cfg.enable -> (lib.length (lib.filter (m: m.primary) config.play.monitors) == 1);
+        message = "play.gamescoperun requires exactly one primary monitor to be configured";
       }
     ];
   };

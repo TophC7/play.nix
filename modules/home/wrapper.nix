@@ -6,10 +6,10 @@
 }:
 
 let
-  cfg = config.wayming.wrappers;
+  cfg = config.play.wrappers;
 
   # Use shared lib function
-  inherit (lib.wayming) toCliArgs;
+  inherit (lib.play) toCliArgs;
 
   # Function to create a wrapper for an application
   mkWrapper =
@@ -36,14 +36,14 @@ let
         ${envExports}
 
         # Execute with gamescoperun
-        exec ${lib.getExe config.wayming.gamescoperun.package} ${extraArgs} ${lib.getExe originalPackage} $argv
+        exec ${lib.getExe config.play.gamescoperun.package} ${extraArgs} ${lib.getExe originalPackage} $argv
       '';
 
     in
     wrapperScript;
 in
 {
-  options.wayming.wrappers = lib.mkOption {
+  options.play.wrappers = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submodule (
         { name, ... }:
@@ -96,7 +96,7 @@ in
             wrappedPackage = lib.mkOption {
               type = lib.types.package;
               readOnly = true;
-              default = mkWrapper name config.wayming.wrappers.${name};
+              default = mkWrapper name config.play.wrappers.${name};
               description = "The configured wrapper package for this application";
             };
           };
@@ -113,6 +113,6 @@ in
     );
 
     # Ensure gamescoperun is enabled if any wrappers are enabled
-    wayming.gamescoperun.enable = lib.mkIf (lib.length (lib.attrNames cfg) > 0) true;
+    play.gamescoperun.enable = lib.mkIf (lib.length (lib.attrNames cfg) > 0) true;
   };
 }
