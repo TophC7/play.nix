@@ -8,7 +8,6 @@
 let
   cfg = config.play.lutris;
 
-  # Default extra packages
   defaultExtraPkgs = with pkgs; [
     wineWowPackages.waylandFull
     winetricks
@@ -16,7 +15,6 @@ let
     xterm
   ];
 
-  # Create the configured lutris package
   configuredLutris = pkgs.lutris.override {
     extraPkgs = pkgs: defaultExtraPkgs ++ cfg.extraPkgs;
   };

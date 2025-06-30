@@ -8,7 +8,6 @@
 let
   cfg = config.play.ananicy;
 
-  # Default extra rules for gaming processes
   defaultExtraRules = [
     {
       "name" = "gamescope";
@@ -16,7 +15,6 @@ let
     }
   ];
 
-  # Combine defaults with user extras
   finalExtraRules = defaultExtraRules ++ cfg.extraRules;
 in
 {

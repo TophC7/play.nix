@@ -14,7 +14,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Enable graphics with 32-bit support for gaming
     hardware.graphics = {
       enable = lib.mkDefault true;
       enable32Bit = lib.mkDefault true;

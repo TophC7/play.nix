@@ -15,7 +15,6 @@ let
   # Use shared lib functions
   inherit (playLib) toCliArgs toEnvCommands getMonitorDefaults;
 
-  # Get monitor defaults
   monitorDefaults = getMonitorDefaults config.play.monitors;
   inherit (monitorDefaults)
     WIDTH
@@ -38,7 +37,6 @@ let
         gamescope-wsi = pkgs.gamescope-wsi or null;
       };
 
-  # Base options with monitor-derived defaults
   defaultBaseOptions =
     {
       backend = "sdl";
@@ -83,7 +81,6 @@ let
   # Merge user environment with defaults
   finalEnvironment = defaultEnvironment // cfg.environment;
 
-  # The gamescoperun script
   gamescoperun = pkgs.writeScriptBin "gamescoperun" ''
     #!${lib.getExe pkgs.fish}
 
@@ -189,7 +186,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Install both gamescope and gamescope-wsi
     home.packages =
       [ cfg.package ]
       ++ [ gamescopePackages.gamescope ]

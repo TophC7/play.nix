@@ -10,19 +10,16 @@
 let
   cfg = config.play.steam;
 
-  # Import proton-cachyos package directly
+  # Import proton-cachyos package directly, some users wont chaotics overlay
   proton-cachyos = pkgs.callPackage ../../pkgs/proton-cachyos { };
 
-  # Default compatibility packages
   defaultCompatPackages = [
     pkgs.proton-ge-custom
     proton-cachyos
   ];
 
-  # Combine defaults with user extras
   finalCompatPackages = defaultCompatPackages ++ cfg.extraCompatPackages;
 
-  # Create the configured steam package
   configuredSteam = pkgs.steam.override {
     extraPkgs = cfg.extraPkgs;
   };
