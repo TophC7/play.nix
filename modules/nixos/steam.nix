@@ -1,3 +1,5 @@
+# Steam module with gaming optimizations
+# Automatically includes proton-cachyos package
 {
   pkgs,
   lib,
@@ -8,9 +10,12 @@
 let
   cfg = config.play.steam;
 
+  # Import proton-cachyos package directly
+  proton-cachyos = pkgs.callPackage ../../pkgs/proton-cachyos { };
+
   # Default compatibility packages
-  defaultCompatPackages = with pkgs; [
-    proton-ge-custom
+  defaultCompatPackages = [
+    pkgs.proton-ge-custom
     proton-cachyos
   ];
 

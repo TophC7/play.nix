@@ -18,8 +18,9 @@ let
   mkWrapper =
     name: wrapperCfg:
     let
-      # Get the original package
-      originalPackage = wrapperCfg.package;
+      # Determine the command to execute
+      baseCommand =
+        if wrapperCfg.command != null then wrapperCfg.command else lib.getExe wrapperCfg.package;
 
       # Create environment variable exports
       envExports = lib.concatStringsSep "\n" (
@@ -39,7 +40,7 @@ let
         ${envExports}
 
         # Execute with gamescoperun
-        exec ${lib.getExe config.play.gamescoperun.package} ${extraArgs} ${lib.getExe originalPackage} $argv
+        exec ${lib.getExe config.play.gamescoperun.package} ${extraArgs} ${baseCommand} $argv
       '';
 
     in
@@ -55,8 +56,20 @@ in
             enable = lib.mkEnableOption "wrapper for this application";
 
             package = lib.mkOption {
-              type = lib.types.package;
-              description = "The package to wrap";
+              type = lib.types.nullOr lib.types.package;
+              default = null;
+              description = "The package to wrap (used with lib.getExe if command is not specified)";
+            };
+
+            command = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              example = "\${lib.getExe osConfig.programs.steam.package} -tenfoot -bigpicture";
+              description = ''
+                The exact command to execute after gamescoperun and its options.
+                If specified, this takes precedence over the package option.
+                Can include arguments and flags.
+              '';
             };
 
             extraOptions = lib.mkOption {
@@ -117,5 +130,10 @@ in
 
     # Ensure gamescoperun is enabled if any wrappers are enabled
     play.gamescoperun.enable = lib.mkIf (lib.length (lib.attrNames cfg) > 0) true;
+
+    assertions = lib.mapAttrsToList (name: wrapperCfg: {
+      assertion = wrapperCfg.enable -> (wrapperCfg.command != null || wrapperCfg.package != null);
+      message = "play.wrappers.${name}: Either 'command' or 'package' must be specified when enabled";
+    }) cfg;
   };
 }
