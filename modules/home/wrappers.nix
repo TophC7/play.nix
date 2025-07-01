@@ -32,7 +32,6 @@ let
         wrapperCfg.extraOptions != { }
       ) "-x \"${toCliArgs wrapperCfg.extraOptions}\"";
 
-      # The wrapper script
       wrapperScript = pkgs.writeScriptBin name ''
         #!${lib.getExe pkgs.fish}
 

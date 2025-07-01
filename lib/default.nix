@@ -6,12 +6,12 @@ rec {
     let
       argToString =
         name: value:
-        if builtins.isBool value then
-          lib.optionalString value "--${name}"
-        else
-          "--${name} ${toString value}";
+        if builtins.isBool value then if value then "--${name}" else "" else "--${name} ${toString value}";
+
+      # Filter out empty strings to avoid extra spaces
+      nonEmptyArgs = lib.filter (s: s != "") (lib.mapAttrsToList argToString attrs);
     in
-    lib.concatStringsSep " " (lib.mapAttrsToList argToString attrs);
+    lib.concatStringsSep " " nonEmptyArgs;
 
   # Helper to convert Nix attrs to fish 'set -x' commands
   toEnvCommands =

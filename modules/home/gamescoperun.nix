@@ -57,7 +57,7 @@ let
       adaptive-sync = true;
     };
 
-  # Merge user options with defaults
+  # Merge user options with defaults - user options override defaults
   finalBaseOptions = defaultBaseOptions // cfg.baseOptions;
 
   defaultEnvironment =
