@@ -1,4 +1,4 @@
-inputs: {
+self: {
   imports = [
     ./monitors.nix
     ./gamescoperun.nix
@@ -6,5 +6,7 @@ inputs: {
   ];
 
   # Pass inputs to all modules via _module.args
-  _module.args = { inherit inputs; };
+  _module.args = {
+    inputs = self.inputs;
+  };
 }

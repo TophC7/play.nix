@@ -1,4 +1,4 @@
-inputs: {
+self: {
   imports = [
     ./amd.nix
     ./ananicy.nix
@@ -8,5 +8,7 @@ inputs: {
   ];
 
   # Pass inputs to all modules via _module.args
-  _module.args = { inherit inputs; };
+  _module.args = {
+    inputs = self.inputs;
+  };
 }

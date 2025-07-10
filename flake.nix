@@ -15,52 +15,49 @@
     {
       self,
       nixpkgs,
-      home-manager,
-      flake-utils,
       chaotic,
       ...
     }@inputs:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ self.overlays.default ];
-        };
+    let
+      forAllSystems = nixpkgs.lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+    in
+    {
+      lib = import ./lib { inherit (nixpkgs) lib; };
 
-        # Extend lib with play utilities
-        lib = nixpkgs.lib.extend (
-          final: prev: {
-            play = import ./lib { lib = final; };
-          }
-        );
+      nixosModules = {
+        play = import ./modules/nixos self;
+        default = self.nixosModules.play;
+      };
 
-      in
-      {
-        packages = {
-          proton-cachyos = pkgs.callPackage ./pkgs/proton-cachyos { };
-          default = self.packages.${system}.proton-cachyos;
-        };
+      homeManagerModules = {
+        play = import ./modules/home self;
+        default = self.homeManagerModules.play;
+      };
 
-        # Expose the extended lib
-        lib = lib;
-      }
-    )
-    // {
-      homeManagerModules.play = import ./modules/home inputs;
-      nixosModules.play = import ./modules/nixos inputs;
-
-      # Default module (home-manager)
-      homeManagerModules.default = self.homeManagerModules.play;
-
-      # Test configuration
       nixosConfigurations.test = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
-          self.nixosModules.play
           ./test-config.nix
+          self.nixosModules.play
         ];
       };
+
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ self.overlays.default ];
+          };
+        in
+        {
+          proton-cachyos = pkgs.callPackage ./pkgs/proton-cachyos { };
+          default = self.packages.${system}.proton-cachyos;
+        }
+      );
 
       # Overlay for packages
       overlays.default = final: prev: {

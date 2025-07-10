@@ -129,7 +129,6 @@ let
     # Execute gamescope with the final arguments and the command
     exec ${lib.getExe gamescopePackages.gamescope} $final_args -- $argv
   '';
-
 in
 {
   options.play.gamescoperun = {
