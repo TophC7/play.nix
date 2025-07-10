@@ -81,8 +81,34 @@ let
   # Merge user environment with defaults
   finalEnvironment = defaultEnvironment // cfg.environment;
 
+  toEchoCommands =
+    env:
+    lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: value: ''
+        echo -e "    \033[1;33m${name}\033[0m=\033[0;35m${toString value}\033[0m"
+      '') env
+    );
+
   gamescoperun = pkgs.writeScriptBin "gamescoperun" ''
     #!${lib.getExe pkgs.fish}
+
+    # Function to display the wrapper environment state
+    function show_environment
+        echo -e "\033[1;36m[gamescoperun]\033[0m Environment:"
+        # Display environment from the module
+        ${toEchoCommands finalEnvironment}
+
+        # Display environment from the calling wrapper, if any
+        if set -q GAMESCOPE_WRAPPER_ENV
+            echo -e "    \033[1;36m(from wrapper)\033[0m"
+            for pair in (string split ';' -- "$GAMESCOPE_WRAPPER_ENV")
+                set parts (string split -m 1 '=' -- "$pair")
+                if test (count $parts) -eq 2
+                    echo -e "        \033[1;33m$parts[1]\033[0m=\033[0;35m$parts[2]\033[0m"
+                end
+            end
+        end
+    end
 
     # Check if we're already inside a Gamescope session
     if set -q GAMESCOPE_WAYLAND_DISPLAY
@@ -90,8 +116,18 @@ let
       exec $argv
     end
 
-    # Set environment variables for the gamescope session
+    # Set base environment variables from the module
     ${toEnvCommands finalEnvironment}
+
+    # Set environment variables from the calling wrapper, overriding if necessary
+    if set -q GAMESCOPE_WRAPPER_ENV
+        for pair in (string split ';' -- "$GAMESCOPE_WRAPPER_ENV")
+            set parts (string split -m 1 '=' -- "$pair")
+            if test (count $parts) -eq 2
+                set -gx $parts[1] "$parts[2]"
+            end
+        end
+    end
 
     # Define and parse arguments using fish's built-in argparse
     argparse -i 'x/extra-args=' -- $argv
@@ -123,7 +159,8 @@ let
         set -a final_args (string split ' ' -- $GAMESCOPE_EXTRA_OPTS)
     end
 
-    # Show the command being executed
+    # Show the environment and command being executed
+    show_environment
     echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m${lib.getExe gamescopePackages.gamescope}\033[0m $final_args \033[1;32m--\033[0m $argv"
 
     # Execute gamescope with the final arguments and the command

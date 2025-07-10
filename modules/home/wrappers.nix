@@ -22,9 +22,13 @@ let
       baseCommand =
         if wrapperCfg.command != null then wrapperCfg.command else lib.getExe wrapperCfg.package;
 
-      # Create environment variable exports
-      envExports = lib.concatStringsSep "\n" (
-        lib.mapAttrsToList (name: value: "set -x ${name} '${toString value}'") wrapperCfg.environment
+      # Convert wrapper-specific environment to a single string for gamescoperun
+      gamescopeWrapperEnv = lib.optionalString (wrapperCfg.environment != { }) (
+        let
+          envList = lib.mapAttrsToList (name: value: "${name}=${toString value}") wrapperCfg.environment;
+        in
+        # Set as a global exported variable so gamescoperun can see it
+        "set -gx GAMESCOPE_WRAPPER_ENV '${lib.concatStringsSep ";" envList}'"
       );
 
       # Convert extraOptions to CLI args
@@ -35,8 +39,8 @@ let
       wrapperScript = pkgs.writeScriptBin name ''
         #!${lib.getExe pkgs.fish}
 
-        # Set additional environment variables
-        ${envExports}
+        # Set environment for gamescoperun to consume
+        ${gamescopeWrapperEnv}
 
         # Execute with gamescoperun
         exec ${lib.getExe config.play.gamescoperun.package} ${extraArgs} ${baseCommand} $argv

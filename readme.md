@@ -48,87 +48,116 @@ play = {
 ### Home Manager Configuration
 
 ```nix
-play = {
-  # Configure monitors for automatic gamescope settings
-  monitors = [{
-    name = "DP-1";
-    primary = true;
-    width = 2560;
-    height = 1440;
-    refreshRate = 165;
-    hdr = true;
-    vrr = true;
-  }];
+{
+  config,
+  osConfig, # This config only works with home-manager as a nixos module
+  lib,
+  pkgs,
+  inputs, # Ensure inputs is available to your home-manager configuration
+  ...
+}:
+{
+  imports = [
+    inputs.play.homeManagerModules.play
+  ];
 
-  # Enable gamescope wrapper
-  gamescoperun.enable = true;
-  
-  # Create application wrappers
-  wrappers = {
-    # If you wish to override the "steam" command/bin, remove "-gamescope"
-    # Overriding the executables makes it so already existing .desktop launchers use the new wrapper
-    steam-gamescope = {
-      enable = true;
-      # Note: Special case for steam, this is the pkg you should use
-      # Also sas of 06/25, steam does not open in normal "desktop mode" with gamescope
-      # You can however exit big picture mode once already open to access the normal ui
-      command = "${lib.getExe osConfig.programs.steam.package} -tenfoot -bigpicture";
-      extraOptions = {
-        "steam" = true;
-      };
-    };
-    
-    lutris-gamescope = {
-      enable = true;
-      package = osConfig.play.lutris.package; # play.nix provides readonly packages
-      extraOptions."force-windows-fullscreen" = true;
-    };
-
-    heroic-gamescope = { 
-      enable = true;
-      package = pkgs.heroic;
-      extraOptions."fsr-upscaling" = true;
-    };
-  };
-};
-
-# Recomendation: Override desktop entries to use gamescope wrappers
-xdg.desktopEntries = {
-  steam = {
-    name = "Steam";
-    comment = "Steam Big Picture (Gamescope Session)";
-    exec = "${lib.getExe config.play.wrappers.steam.wrappedPackage}";
-    icon = "steam";
-    type = "Application";
-    terminal = false;
-    categories = [ "Game" ];
-    mimeType = [
-      "x-scheme-handler/steam"
-      "x-scheme-handler/steamlink"
+  play = {
+    # Configure monitors for automatic gamescope settings
+    monitors = [
+      {
+        name = "DP-1";
+        primary = true;
+        width = 2560;
+        height = 1440;
+        refreshRate = 144;
+        hdr = true;
+        vrr = true;
+      }
     ];
-    settings = {
-      StartupNotify = "true";
-      StartupWMClass = "Steam";
-      PrefersNonDefaultGPU = "true";
-      X-KDE-RunOnDiscreteGpu = "true";
-      Keywords = "gaming;";
-    };
-    actions = {
-      bigpicture = {
-        name = "Steam Client (No Gamescope)";
-        exec = "${lib.getExe (config.play.steam.package or pkgs.steam)}";
+
+    # Enable gamescope wrapper
+    gamescoperun.enable = true;
+
+    # Create application wrappers
+    wrappers = {
+      # If you wish to override the "steam" command/bin, remove "-gamescope"
+      # Overriding the executables makes it so already existing .desktop launchers use the new wrapper
+      steam-gamescope = {
+        enable = true;
+        # Note: Special case for steam, this is the pkg you should use
+        # Also sas of 06/25, steam does not open in normal "desktop mode" with gamescope
+        # You can however exit big picture mode once already open to access the normal ui
+        command = "${lib.getExe osConfig.programs.steam.package} -bigpicture -tenfoot";
+        extraOptions = {
+          "steam" = true; # equivalent to --steam flag
+        };
+        environment = {
+          STEAM_FORCE_DESKTOPUI_SCALING = 1;
+          STEAM_GAMEPADUI = 1;
+        };
+      };
+
+      lutris-gamescope = {
+        enable = true;
+        package = osConfig.play.lutris.package; # play.nix provides readonly packages
+        extraOptions = {
+          "force-windows-fullscreen" = true;
+        };
+        environment = {
+          LUTRIS_SKIP_INIT = 1;
+        };
+      };
+
+      heroic-gamescope = {
+        enable = true;
+        package = pkgs.heroic;
+        extraOptions."fsr-upscaling" = true;
       };
     };
   };
-  
-  heroic = {
-    name = "Heroic (Gamescope)";
-    exec = "${lib.getExe config.play.wrappers.heroic-gaming.wrappedPackage}";
-    icon = "com.heroicgameslauncher.hgl";
-    type = "Application";
-    categories = [ "Game" ];
+
+  # Recomendation: Override desktop entries to use gamescope wrappers
+  xdg.desktopEntries = {
+    steam = lib.mkDefault {
+      name = "Steam";
+      comment = "Steam Big Picture (Gamescope Session)";
+      exec = "${lib.getExe config.play.wrappers.steam-gamescope.wrappedPackage}";
+      icon = "steam";
+      type = "Application";
+      terminal = false;
+      categories = [ "Game" ];
+      mimeType = [
+        "x-scheme-handler/steam"
+        "x-scheme-handler/steamlink"
+      ];
+      settings = {
+        StartupNotify = "true";
+        StartupWMClass = "Steam";
+        PrefersNonDefaultGPU = "true";
+        X-KDE-RunOnDiscreteGpu = "true";
+        Keywords = "gaming;";
+      };
+      actions = {
+        client = {
+          name = "Steam Client (No Gamescope)";
+          exec = "${lib.getExe osConfig.programs.steam.package}";
+        };
+        steamdeck = {
+          name = "Steam Deck (Gamescope)";
+          exec = "${lib.getExe config.play.wrappers.steam-gamescope.wrappedPackage} -steamdeck";
+        };
+      };
+    };
+
+    heroic = {
+      name = "Heroic (Gamescope)";
+      exec = "${lib.getExe config.play.wrappers.heroic-gamescope.wrappedPackage}";
+      icon = "com.heroicgameslauncher.hgl";
+      type = "Application";
+      categories = [ "Game" ];
+    };
   };
-};
+}
 ```
 
 ## Usage
