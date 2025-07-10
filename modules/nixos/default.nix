@@ -1,10 +1,12 @@
-{ chaotic }:
-{
+inputs: {
   imports = [
     ./amd.nix
     ./ananicy.nix
     ./gamemode.nix
     ./lutris.nix
-    (import ./steam.nix { inherit chaotic; })
+    ./steam.nix
   ];
+
+  # Pass inputs to all modules via _module.args
+  _module.args = { inherit inputs; };
 }

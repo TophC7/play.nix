@@ -18,7 +18,8 @@
       home-manager,
       flake-utils,
       chaotic,
-    }:
+      ...
+    }@inputs:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -46,15 +47,20 @@
       }
     )
     // {
-      homeManagerModules.play = import ./modules/home;
-      nixosModules.play = {
-        imports = [
-          (import ./modules/nixos { inherit chaotic; })
-        ];
-      };
+      homeManagerModules.play = import ./modules/home inputs;
+      nixosModules.play = import ./modules/nixos inputs;
 
       # Default module (home-manager)
       homeManagerModules.default = self.homeManagerModules.play;
+
+      # Test configuration
+      nixosConfigurations.test = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          self.nixosModules.play
+          ./test-config.nix
+        ];
+      };
 
       # Overlay for packages
       overlays.default = final: prev: {

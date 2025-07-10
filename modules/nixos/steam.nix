@@ -4,7 +4,7 @@
   pkgs,
   lib,
   config,
-  chaotic,
+  inputs,
   ...
 }:
 
@@ -13,7 +13,7 @@ let
 
   # Import proton packages directly, some users wont chaotics overlay
   proton-cachyos = pkgs.callPackage ../../pkgs/proton-cachyos { };
-  proton-ge-custom = chaotic.legacyPackages.${pkgs.system}.proton-ge-custom;
+  proton-ge-custom = inputs.chaotic.legacyPackages.${pkgs.system}.proton-ge-custom;
 
   defaultCompatPackages = [
     proton-cachyos
