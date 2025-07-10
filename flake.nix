@@ -47,7 +47,11 @@
     )
     // {
       homeManagerModules.play = import ./modules/home;
-      nixosModules.play = import ./modules/nixos;
+      nixosModules.play = {
+        imports = [
+          (import ./modules/nixos { inherit chaotic; })
+        ];
+      };
 
       # Default module (home-manager)
       homeManagerModules.default = self.homeManagerModules.play;

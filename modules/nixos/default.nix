@@ -1,9 +1,10 @@
+{ chaotic }:
 {
   imports = [
     ./amd.nix
     ./ananicy.nix
     ./gamemode.nix
     ./lutris.nix
-    ./steam.nix
+    (import ./steam.nix { inherit chaotic; })
   ];
 }

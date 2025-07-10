@@ -4,18 +4,20 @@
   pkgs,
   lib,
   config,
+  chaotic,
   ...
 }:
 
 let
   cfg = config.play.steam;
 
-  # Import proton-cachyos package directly, some users wont chaotics overlay
+  # Import proton packages directly, some users wont chaotics overlay
   proton-cachyos = pkgs.callPackage ../../pkgs/proton-cachyos { };
+  proton-ge-custom = chaotic.legacyPackages.${pkgs.system}.proton-ge-custom;
 
   defaultCompatPackages = [
-    pkgs.proton-ge-custom
     proton-cachyos
+    proton-ge-custom
   ];
 
   finalCompatPackages = defaultCompatPackages ++ cfg.extraCompatPackages;
