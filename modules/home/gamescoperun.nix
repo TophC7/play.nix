@@ -5,7 +5,8 @@
   inputs,
   ...
 }:
-
+## Test the package
+# nix build .#proton-cachyos --no-link
 let
   # Extend lib with play utilities
   playLib = import ../../lib { inherit lib; };
@@ -51,6 +52,7 @@ let
     // lib.optionalAttrs HDR {
       hdr-enabled = true;
       hdr-debug-force-output = true;
+      hdr-debug-force-support = true;
       hdr-itm-enable = true;
     }
     // lib.optionalAttrs VRR {
@@ -64,13 +66,12 @@ let
     {
       ENABLE_GAMESCOPE_WSI = 1;
       GAMESCOPE_WAYLAND_DISPLAY = "gamescope-0";
-      PROTON_USE_SDL = 1;
-      PROTON_USE_WAYLAND = 1;
       SDL_VIDEODRIVER = "wayland";
       AMD_VULKAN_ICD = "RADV";
       RADV_PERFTEST = "aco";
       DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1 = 1;
       DISABLE_LAYER_NV_OPTIMUS_1 = 1;
+      PROTON_ADD_CONFIG = "sdlinput,wayland";
     }
     // lib.optionalAttrs HDR {
       ENABLE_HDR_WSI = 1;

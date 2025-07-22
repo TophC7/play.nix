@@ -37,7 +37,8 @@ in
   config = lib.mkIf cfg.enable {
     programs.gamemode = {
       enable = true;
-      settings = cfg.settings;
+      enableRenice = true;
+      settings = lib.mkDefault cfg.settings;
     };
   };
 }
