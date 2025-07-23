@@ -4,7 +4,6 @@
   pkgs,
   ...
 }:
-
 let
   # Extend lib with play utilities
   playLib = import ../../lib { inherit lib; };
@@ -31,6 +30,19 @@ let
         "set -gx GAMESCOPE_WRAPPER_ENV '${lib.concatStringsSep ";" envList}'"
       );
 
+      # Set systemd flag - always set it to communicate wrapper preference to gamescoperun
+      systemdEnv = "set -gx GAMESCOPE_USE_SYSTEMD ${if wrapperCfg.useSystemd then "1" else "0"}";
+
+      # Set HDR flag if specified for this wrapper
+      hdrEnv =
+        lib.optionalString (wrapperCfg.useHDR != null)
+          "set -gx GAMESCOPE_USE_HDR ${if wrapperCfg.useHDR then "true" else "false"}";
+
+      # Set WSI flag if specified for this wrapper
+      wsiEnv =
+        lib.optionalString (wrapperCfg.useWSI != null)
+          "set -gx GAMESCOPE_USE_WSI ${if wrapperCfg.useWSI then "true" else "false"}";
+
       # Convert extraOptions to CLI args
       extraArgs = lib.optionalString (
         wrapperCfg.extraOptions != { }
@@ -41,6 +53,9 @@ let
 
         # Set environment for gamescoperun to consume
         ${gamescopeWrapperEnv}
+        ${systemdEnv}
+        ${hdrEnv}
+        ${wsiEnv}
 
         # Execute with gamescoperun
         exec ${lib.getExe config.play.gamescoperun.package} ${extraArgs} ${baseCommand} $argv
@@ -111,6 +126,24 @@ in
               description = "Additional environment variables for this specific wrapper";
             };
 
+            useSystemd = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Enable systemd-run for this specific wrapper. Takes precedence over global defaultSystemd. When true, wraps the gamescope execution with systemd-run for better process isolation.";
+            };
+
+            useHDR = lib.mkOption {
+              type = lib.types.nullOr lib.types.bool;
+              default = null;
+              description = "Enable or disable HDR for this specific wrapper. Takes precedence over global defaultHDR and monitor settings. If null, uses global defaults.";
+            };
+
+            useWSI = lib.mkOption {
+              type = lib.types.nullOr lib.types.bool;
+              default = null;
+              description = "Enable or disable WSI (Wayland Surface Interface) for this specific wrapper. Takes precedence over global defaultWSI. If null, uses global defaults.";
+            };
+
             # Readonly package option that exposes the configured wrapper
             wrappedPackage = lib.mkOption {
               type = lib.types.package;
@@ -132,7 +165,9 @@ in
     );
 
     # Ensure gamescoperun is enabled if any wrappers are enabled
-    play.gamescoperun.enable = lib.mkIf (lib.length (lib.attrNames cfg) > 0) true;
+    play.gamescoperun.enable = lib.mkIf (
+      lib.length (lib.attrNames (lib.filterAttrs (name: wrapperCfg: wrapperCfg.enable) cfg)) > 0
+    ) true;
 
     assertions = lib.mapAttrsToList (name: wrapperCfg: {
       assertion = wrapperCfg.enable -> (wrapperCfg.command != null || wrapperCfg.package != null);

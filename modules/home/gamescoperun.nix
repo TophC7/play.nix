@@ -25,6 +25,10 @@ let
     HDR
     ;
 
+  # Determine final HDR and WSI settings
+  finalHDR = cfg.defaultHDR || HDR;
+  finalWSI = cfg.defaultWSI;
+
   # Select gamescope packages based on useGit option
   gamescopePackages =
     if cfg.useGit then
@@ -49,7 +53,7 @@ let
       output-width = WIDTH;
       rt = true;
     }
-    // lib.optionalAttrs HDR {
+    // lib.optionalAttrs finalHDR {
       hdr-enabled = true;
       hdr-debug-force-output = true;
       hdr-debug-force-support = true;
@@ -64,8 +68,6 @@ let
 
   defaultEnvironment =
     {
-      ENABLE_GAMESCOPE_WSI = 1;
-      GAMESCOPE_WAYLAND_DISPLAY = "gamescope-0";
       SDL_VIDEODRIVER = "wayland";
       AMD_VULKAN_ICD = "RADV";
       RADV_PERFTEST = "aco";
@@ -73,7 +75,11 @@ let
       DISABLE_LAYER_NV_OPTIMUS_1 = 1;
       PROTON_ADD_CONFIG = "sdlinput,wayland";
     }
-    // lib.optionalAttrs HDR {
+    // lib.optionalAttrs finalWSI {
+      ENABLE_GAMESCOPE_WSI = 1;
+      GAMESCOPE_WAYLAND_DISPLAY = "gamescope-0";
+    }
+    // lib.optionalAttrs finalHDR {
       ENABLE_HDR_WSI = 1;
       DXVK_HDR = 1;
       PROTON_ENABLE_HDR = 1;
@@ -120,7 +126,7 @@ let
     # Set base environment variables from the module
     ${toEnvCommands finalEnvironment}
 
-    # Set environment variables from the calling wrapper, overriding if necessary
+    # Process wrapper-specific settings and override base environment if needed
     if set -q GAMESCOPE_WRAPPER_ENV
         for pair in (string split ';' -- "$GAMESCOPE_WRAPPER_ENV")
             set parts (string split -m 1 '=' -- "$pair")
@@ -128,6 +134,40 @@ let
                 set -gx $parts[1] "$parts[2]"
             end
         end
+    end
+
+    # Handle wrapper-specific HDR settings
+    if set -q GAMESCOPE_USE_HDR
+        if test "$GAMESCOPE_USE_HDR" = "true"
+            set -gx ENABLE_HDR_WSI 1
+            set -gx DXVK_HDR 1
+            set -gx PROTON_ENABLE_HDR 1
+        else if test "$GAMESCOPE_USE_HDR" = "false"
+            set -e ENABLE_HDR_WSI
+            set -e DXVK_HDR
+            set -e PROTON_ENABLE_HDR
+        end
+    end
+
+    # Handle wrapper-specific WSI settings
+    if set -q GAMESCOPE_USE_WSI
+        if test "$GAMESCOPE_USE_WSI" = "true"
+            set -gx ENABLE_GAMESCOPE_WSI 1
+            set -gx GAMESCOPE_WAYLAND_DISPLAY "gamescope-0"
+        else if test "$GAMESCOPE_USE_WSI" = "false"
+            set -e ENABLE_GAMESCOPE_WSI
+            set -e GAMESCOPE_WAYLAND_DISPLAY
+        end
+    end
+
+    # Handle wrapper-specific HDR options in gamescope args
+    if set -q GAMESCOPE_USE_HDR
+        if test "$GAMESCOPE_USE_HDR" = "true"
+            set -a final_args --hdr-enabled --hdr-debug-force-output --hdr-debug-force-support --hdr-itm-enable
+        end
+    else if test "${if finalHDR then "true" else "false"}" = "true"
+        # Use default HDR settings if wrapper doesn't specify
+        set -a final_args --hdr-enabled --hdr-debug-force-output --hdr-debug-force-support --hdr-itm-enable
     end
 
     # Define and parse arguments using fish's built-in argparse
@@ -162,10 +202,28 @@ let
 
     # Show the environment and command being executed
     show_environment
-    echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m${lib.getExe gamescopePackages.gamescope}\033[0m $final_args \033[1;32m--\033[0m $argv"
 
-    # Execute gamescope with the final arguments and the command
-    exec ${lib.getExe gamescopePackages.gamescope} $final_args -- $argv
+    # Build and display the actual command being executed
+    set -l use_systemd false
+
+    # Check wrapper preference first (explicit 1 or 0), then fall back to default
+    if set -q GAMESCOPE_USE_SYSTEMD
+        if test "$GAMESCOPE_USE_SYSTEMD" = "1"
+            set use_systemd true
+        else if test "$GAMESCOPE_USE_SYSTEMD" = "0"
+            set use_systemd false
+        end
+    else if test "${if cfg.defaultSystemd then "true" else "false"}" = "true"
+        set use_systemd true
+    end
+
+    if test "$use_systemd" = "true"
+      echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34msystemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY\033[0m (with current env) \033[1;34m${lib.getExe gamescopePackages.gamescope}\033[0m $final_args \033[1;32m--\033[0m $argv"
+      exec systemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY ${lib.getExe gamescopePackages.gamescope} $final_args -- $argv
+    else
+      echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m${lib.getExe gamescopePackages.gamescope}\033[0m $final_args \033[1;32m--\033[0m $argv"
+      exec ${lib.getExe gamescopePackages.gamescope} $final_args -- $argv
+    end
   '';
 in
 {
@@ -176,6 +234,24 @@ in
       type = lib.types.bool;
       default = true;
       description = "Use git versions of gamescope from chaotic-nyx for latest features";
+    };
+
+    defaultSystemd = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Default systemd-run setting for wrappers that don't specify useSystemd.";
+    };
+
+    defaultHDR = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Default HDR setting for wrappers that don't specify useHDR. Also applies when monitor HDR is false but you want to override it globally.";
+    };
+
+    defaultWSI = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Default WSI (Wayland Surface Interface) setting for wrappers that don't specify useWSI.";
     };
 
     baseOptions = lib.mkOption {
