@@ -14,7 +14,7 @@ let
   cfg = config.play.gamescoperun;
 
   # Use shared lib functions
-  inherit (playLib) toCliArgs toEnvCommands getMonitorDefaults;
+  inherit (playLib) toCliArgs getMonitorDefaults;
 
   monitorDefaults = getMonitorDefaults config.play.monitors;
   inherit (monitorDefaults)
@@ -42,187 +42,224 @@ let
         gamescope-wsi = pkgs.gamescope-wsi or null;
       };
 
-  defaultBaseOptions =
-    {
-      backend = "sdl";
-      fade-out-duration = 200;
-      fullscreen = true;
-      immediate-flips = true;
-      nested-refresh = REFRESH_RATE;
-      output-height = HEIGHT;
-      output-width = WIDTH;
-      rt = true;
-    }
-    // lib.optionalAttrs finalHDR {
-      hdr-enabled = true;
-      hdr-debug-force-output = true;
-      hdr-debug-force-support = true;
-      hdr-itm-enable = true;
-    }
-    // lib.optionalAttrs VRR {
-      adaptive-sync = true;
-    };
+  # Base gamescope options derived from monitor configuration
+  defaultBaseOptions = {
+    backend = "sdl";
+    fade-out-duration = 200;
+    fullscreen = true;
+    immediate-flips = true;
+    nested-refresh = REFRESH_RATE;
+    output-height = HEIGHT;
+    output-width = WIDTH;
+    rt = true;
+  }
+  // lib.optionalAttrs VRR {
+    adaptive-sync = true;
+  };
 
   # Merge user options with defaults - user options override defaults
   finalBaseOptions = defaultBaseOptions // cfg.baseOptions;
 
-  defaultEnvironment =
-    {
-      SDL_VIDEODRIVER = "wayland";
-      AMD_VULKAN_ICD = "RADV";
-      RADV_PERFTEST = "aco";
-      DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1 = 1;
-      DISABLE_LAYER_NV_OPTIMUS_1 = 1;
-      PROTON_ADD_CONFIG = "sdlinput,wayland";
-    }
-    // lib.optionalAttrs finalWSI {
-      ENABLE_GAMESCOPE_WSI = 1;
-      GAMESCOPE_WAYLAND_DISPLAY = "gamescope-0";
-    }
-    // lib.optionalAttrs finalHDR {
-      ENABLE_HDR_WSI = 1;
-      DXVK_HDR = 1;
-      PROTON_ENABLE_HDR = 1;
-    };
+  # Base environment variables
+  defaultEnvironment = {
+    SDL_VIDEODRIVER = "wayland";
+    AMD_VULKAN_ICD = "RADV";
+    RADV_PERFTEST = "aco";
+    DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1 = 1;
+    DISABLE_LAYER_NV_OPTIMUS_1 = 1;
+    PROTON_ADD_CONFIG = "sdlinput,wayland";
+    GAMESCOPE_WAYLAND_DISPLAY = "gamescope-0";
+  }
+  // lib.optionalAttrs finalWSI {
+    ENABLE_GAMESCOPE_WSI = 1;
+  }
+  // lib.optionalAttrs finalHDR {
+    ENABLE_HDR_WSI = 1;
+    DXVK_HDR = 1;
+    PROTON_ENABLE_HDR = 1;
+  };
 
   # Merge user environment with defaults
   finalEnvironment = defaultEnvironment // cfg.environment;
 
-  toEchoCommands =
-    env:
-    lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: value: ''
-        echo -e "    \033[1;33m${name}\033[0m=\033[0;35m${toString value}\033[0m"
-      '') env
-    );
+  # Generate environment variable names for dynamic discovery
+  # This ensures the environment display adapts to configuration changes
+  baseEnvVars = lib.attrNames finalEnvironment;
+  userEnvVars = lib.attrNames cfg.environment;
+  allEnvVars = lib.unique (
+    baseEnvVars
+    ++ userEnvVars
+    ++ [
+      # Add wrapper communication variables
+      "GAMESCOPE_USE_HDR"
+      "GAMESCOPE_USE_WSI"
+      "GAMESCOPE_USE_SYSTEMD"
+      "GAMESCOPE_WRAPPER_ENV"
+    ]
+  );
 
   gamescoperun = pkgs.writeScriptBin "gamescoperun" ''
     #!${lib.getExe pkgs.fish}
 
-    # Function to display the wrapper environment state
+    # Smart environment display function - dynamically discovers all relevant variables
     function show_environment
         echo -e "\033[1;36m[gamescoperun]\033[0m Environment:"
-        # Display environment from the module
-        ${toEchoCommands finalEnvironment}
-
-        # Display environment from the calling wrapper, if any
-        if set -q GAMESCOPE_WRAPPER_ENV
-            echo -e "    \033[1;36m(from wrapper)\033[0m"
-            for pair in (string split ';' -- "$GAMESCOPE_WRAPPER_ENV")
-                set parts (string split -m 1 '=' -- "$pair")
-                if test (count $parts) -eq 2
-                    echo -e "        \033[1;33m$parts[1]\033[0m=\033[0;35m$parts[2]\033[0m"
+        
+        # Dynamically check all configured environment variables
+        for var in ${lib.concatStringsSep " " allEnvVars}
+            if set -q $var
+                set -l value (eval echo \$$var)
+                if test -n "$value"
+                    echo -e "    \033[1;33m$var\033[0m=\033[0;35m$value\033[0m"
+                else
+                    echo -e "    \033[1;33m$var\033[0m=\033[0;31m(empty/disabled)\033[0m"
+                end
+            end
+        end
+        
+        # Show any additional environment variables that might be set by wrappers
+        # but not in our known list (discovery mode)
+        for var in (env | grep -E '^(GAMESCOPE_|ENABLE_|DXVK_|PROTON_|RADV_|AMD_|SDL_)' | cut -d= -f1 | sort -u)
+            set -l already_shown false
+            for known_var in ${lib.concatStringsSep " " allEnvVars}
+                if test "$var" = "$known_var"
+                    set already_shown true
+                    break
+                end
+            end
+            
+            if not $already_shown
+                if set -q $var
+                    set -l value (eval echo \$$var)
+                    echo -e "    \033[1;33m$var\033[0m=\033[0;35m$value\033[0m \033[0;90m(discovered)\033[0m"
                 end
             end
         end
     end
 
-    # Check if we're already inside a Gamescope session
-    if set -q GAMESCOPE_WAYLAND_DISPLAY
-      echo "Already inside Gamescope session ($GAMESCOPE_WAYLAND_DISPLAY), running command directly..."
-      exec $argv
+    # Parse arguments early to handle -x flag properly
+    argparse -i 'x/extra-args=' -- $argv
+    if test $status -ne 0
+        exit 1
     end
 
-    # Set base environment variables from the module
-    ${toEnvCommands finalEnvironment}
+    # Early exit for nested gamescope sessions
+    if set -q GAMESCOPE_WAYLAND_DISPLAY
+        echo -e "\033[1;33m[gamescoperun]\033[0m Already inside Gamescope session ($GAMESCOPE_WAYLAND_DISPLAY), running command directly..."
+        exec $argv
+    end
 
-    # Process wrapper-specific settings and override base environment if needed
+    # Validate we have a command to run
+    if test (count $argv) -eq 0
+        echo "Usage: gamescoperun [-x|--extra-args \"<options>\"] <command> [args...]"
+        echo ""
+        echo "Examples:"
+        echo "  gamescoperun heroic"
+        echo "  gamescoperun -x \"--fsr-upscaling-sharpness 5\" steam"
+        echo ""
+        echo "Note: GAMESCOPE_EXTRA_OPTS is legacy - prefer using -x/--extra-args"
+        exit 1
+    end
+
+    # Set base environment from Nix configuration
+    ${lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (
+        name: value: "set -gx ${name} ${lib.escapeShellArg (toString value)}"
+      ) finalEnvironment
+    )}
+
+    # Process wrapper-specific environment overrides
     if set -q GAMESCOPE_WRAPPER_ENV
         for pair in (string split ';' -- "$GAMESCOPE_WRAPPER_ENV")
-            set parts (string split -m 1 '=' -- "$pair")
-            if test (count $parts) -eq 2
-                set -gx $parts[1] "$parts[2]"
+            if test -n "$pair"
+                set parts (string split -m 1 '=' -- "$pair")
+                if test (count $parts) -eq 2
+                    set -gx $parts[1] "$parts[2]"
+                end
             end
         end
     end
 
-    # Handle wrapper-specific HDR settings
-    if set -q GAMESCOPE_USE_HDR
-        if test "$GAMESCOPE_USE_HDR" = "true"
-            set -gx ENABLE_HDR_WSI 1
-            set -gx DXVK_HDR 1
-            set -gx PROTON_ENABLE_HDR 1
-        else if test "$GAMESCOPE_USE_HDR" = "false"
-            set -e ENABLE_HDR_WSI
-            set -e DXVK_HDR
-            set -e PROTON_ENABLE_HDR
+    function apply_wrapper_override
+        set -l var_name $argv[1]
+        set -l true_action $argv[2]
+        set -l false_action $argv[3]
+        
+        if set -q $var_name
+            set -l value (eval echo \$$var_name)
+            switch "$value"
+                case "true" "1"
+                    eval $true_action
+                case "false" "0"
+                    eval $false_action
+            end
         end
     end
 
-    # Handle wrapper-specific WSI settings
-    if set -q GAMESCOPE_USE_WSI
-        if test "$GAMESCOPE_USE_WSI" = "true"
-            set -gx ENABLE_GAMESCOPE_WSI 1
-            set -gx GAMESCOPE_WAYLAND_DISPLAY "gamescope-0"
-        else if test "$GAMESCOPE_USE_WSI" = "false"
-            set -e ENABLE_GAMESCOPE_WSI
-            set -e GAMESCOPE_WAYLAND_DISPLAY
-        end
-    end
+    # HDR overrides
+    apply_wrapper_override GAMESCOPE_USE_HDR \
+        'set -gx ENABLE_HDR_WSI 1; set -gx DXVK_HDR 1; set -gx PROTON_ENABLE_HDR 1' \
+        'set -gx ENABLE_HDR_WSI ""; set -gx DXVK_HDR ""; set -gx PROTON_ENABLE_HDR ""'
 
-    # Handle wrapper-specific HDR options in gamescope args
+    # WSI overrides
+    apply_wrapper_override GAMESCOPE_USE_WSI \
+        'set -gx ENABLE_GAMESCOPE_WSI 1' \
+        'set -gx ENABLE_GAMESCOPE_WSI ""'
+
+    # Build gamescope arguments with proper precedence
+    set -l final_args ${toCliArgs finalBaseOptions}
+
+    # Add HDR args based on wrapper preference or global default
+    set -l add_hdr_flags false
     if set -q GAMESCOPE_USE_HDR
         if test "$GAMESCOPE_USE_HDR" = "true"
-            set -a final_args --hdr-enabled --hdr-debug-force-output --hdr-debug-force-support --hdr-itm-enable
+            set add_hdr_flags true
         end
+        # If GAMESCOPE_USE_HDR is "false", add_hdr_flags stays false
     else if test "${if finalHDR then "true" else "false"}" = "true"
-        # Use default HDR settings if wrapper doesn't specify
+        set add_hdr_flags true
+    end
+
+    if test "$add_hdr_flags" = "true"
         set -a final_args --hdr-enabled --hdr-debug-force-output --hdr-debug-force-support --hdr-itm-enable
     end
 
-    # Define and parse arguments using fish's built-in argparse
-    argparse -i 'x/extra-args=' -- $argv
-    if test $status -ne 0
-      exit 1
-    end
-
-    # Check if we have a command to run
-    if test (count $argv) -eq 0
-      echo "Usage: gamescoperun [-x|--extra-args \"<options>\"] <command> [args...]"
-      echo ""
-      echo "Examples:"
-      echo "  gamescoperun heroic"
-      echo "  gamescoperun -x \"--fsr-upscaling-sharpness 5\" steam"
-      echo "  GAMESCOPE_EXTRA_OPTS=\"--fsr\" gamescoperun steam (legacy)"
-      exit 1
-    end
-
-    # Combine base args, extra args from CLI, and extra args from env (for legacy)
-    set -l final_args ${toCliArgs finalBaseOptions}
-
-    # Add args from -x/--extra-args flag, splitting the string into a list
+    # Add user-provided extra arguments (primary method)
     if set -q _flag_extra_args
         set -a final_args (string split ' ' -- $_flag_extra_args)
     end
 
-    # For legacy support, add args from GAMESCOPE_EXTRA_OPTS if it exists
+    # Support legacy GAMESCOPE_EXTRA_OPTS (discouraged but functional)
     if set -q GAMESCOPE_EXTRA_OPTS
+        echo -e "\033[1;33m[gamescoperun]\033[0m Warning: GAMESCOPE_EXTRA_OPTS is legacy, prefer -x/--extra-args"
         set -a final_args (string split ' ' -- $GAMESCOPE_EXTRA_OPTS)
     end
 
-    # Show the environment and command being executed
-    show_environment
-
-    # Build and display the actual command being executed
+    # Determine systemd usage
     set -l use_systemd false
-
-    # Check wrapper preference first (explicit 1 or 0), then fall back to default
     if set -q GAMESCOPE_USE_SYSTEMD
-        if test "$GAMESCOPE_USE_SYSTEMD" = "1"
-            set use_systemd true
-        else if test "$GAMESCOPE_USE_SYSTEMD" = "0"
-            set use_systemd false
+        switch "$GAMESCOPE_USE_SYSTEMD"
+            case "1" "true"
+                set use_systemd true
+            case "0" "false"
+                set use_systemd false
         end
     else if test "${if cfg.defaultSystemd then "true" else "false"}" = "true"
         set use_systemd true
     end
 
+    # Display final environment state for debugging
+    show_environment
+
+    # Execute gamescope with assembled configuration
+    set -l gamescope_cmd ${lib.getExe gamescopePackages.gamescope}
+
     if test "$use_systemd" = "true"
-      echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34msystemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY\033[0m (with current env) \033[1;34m${lib.getExe gamescopePackages.gamescope}\033[0m $final_args \033[1;32m--\033[0m $argv"
-      exec systemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY ${lib.getExe gamescopePackages.gamescope} $final_args -- $argv
+        echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34msystemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY\033[0m $gamescope_cmd $final_args \033[1;32m--\033[0m $argv"
+        exec systemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY $gamescope_cmd $final_args -- $argv
     else
-      echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m${lib.getExe gamescopePackages.gamescope}\033[0m $final_args \033[1;32m--\033[0m $argv"
-      exec ${lib.getExe gamescopePackages.gamescope} $final_args -- $argv
+        echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m$gamescope_cmd\033[0m $final_args \033[1;32m--\033[0m $argv"
+        exec $gamescope_cmd $final_args -- $argv
     end
   '';
 in
@@ -299,10 +336,11 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages =
-      [ cfg.package ]
-      ++ [ gamescopePackages.gamescope ]
-      ++ lib.optionals (gamescopePackages.gamescope-wsi != null) [ gamescopePackages.gamescope-wsi ];
+    home.packages = [
+      cfg.package
+    ]
+    ++ [ gamescopePackages.gamescope ]
+    ++ lib.optionals (gamescopePackages.gamescope-wsi != null) [ gamescopePackages.gamescope-wsi ];
 
     # Assertion to ensure monitors are configured if gamescoperun is enabled
     assertions = [

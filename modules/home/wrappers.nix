@@ -21,44 +21,33 @@ let
       baseCommand =
         if wrapperCfg.command != null then wrapperCfg.command else lib.getExe wrapperCfg.package;
 
-      # Convert wrapper-specific environment to a single string for gamescoperun
-      gamescopeWrapperEnv = lib.optionalString (wrapperCfg.environment != { }) (
-        let
-          envList = lib.mapAttrsToList (name: value: "${name}=${toString value}") wrapperCfg.environment;
-        in
-        # Set as a global exported variable so gamescoperun can see it
-        "set -gx GAMESCOPE_WRAPPER_ENV '${lib.concatStringsSep ";" envList}'"
-      );
-
-      # Set systemd flag - always set it to communicate wrapper preference to gamescoperun
-      systemdEnv = "set -gx GAMESCOPE_USE_SYSTEMD ${if wrapperCfg.useSystemd then "1" else "0"}";
-
-      # Set HDR flag if specified for this wrapper
-      hdrEnv =
-        lib.optionalString (wrapperCfg.useHDR != null)
-          "set -gx GAMESCOPE_USE_HDR ${if wrapperCfg.useHDR then "true" else "false"}";
-
-      # Set WSI flag if specified for this wrapper
-      wsiEnv =
-        lib.optionalString (wrapperCfg.useWSI != null)
-          "set -gx GAMESCOPE_USE_WSI ${if wrapperCfg.useWSI then "true" else "false"}";
-
-      # Convert extraOptions to CLI args
-      extraArgs = lib.optionalString (
-        wrapperCfg.extraOptions != { }
-      ) "-x \"${toCliArgs wrapperCfg.extraOptions}\"";
-
       wrapperScript = pkgs.writeScriptBin name ''
         #!${lib.getExe pkgs.fish}
 
-        # Set environment for gamescoperun to consume
-        ${gamescopeWrapperEnv}
-        ${systemdEnv}
-        ${hdrEnv}
-        ${wsiEnv}
+        # Environment variables for communication with gamescoperun
+        set -gx WRAPPER_NAME "${name}"
+        ${lib.optionalString (wrapperCfg.useHDR != null) ''
+          set -gx GAMESCOPE_USE_HDR "${if wrapperCfg.useHDR then "true" else "false"}"
+        ''}
+        ${lib.optionalString (wrapperCfg.useWSI != null) ''
+          set -gx GAMESCOPE_USE_WSI "${if wrapperCfg.useWSI then "true" else "false"}"
+        ''}
+        ${lib.optionalString (wrapperCfg.useSystemd != null) ''
+          set -gx GAMESCOPE_USE_SYSTEMD "${lib.boolToString wrapperCfg.useSystemd}"
+        ''}
+
+        # Set wrapper-specific environment variables using GAMESCOPE_WRAPPER_ENV
+        ${lib.optionalString (wrapperCfg.environment != { }) (
+          let
+            envList = lib.mapAttrsToList (name: value: "${name}=${toString value}") wrapperCfg.environment;
+          in
+          ''set -gx GAMESCOPE_WRAPPER_ENV "${lib.concatStringsSep ";" envList}"''
+        )}
 
         # Execute with gamescoperun
-        exec ${lib.getExe config.play.gamescoperun.package} ${extraArgs} ${baseCommand} $argv
+        exec ${lib.getExe config.play.gamescoperun.package} ${
+          lib.optionalString (wrapperCfg.extraOptions != { }) ''-x "${toCliArgs wrapperCfg.extraOptions}"''
+        } ${baseCommand} $argv
       '';
 
     in
@@ -108,6 +97,7 @@ in
                 Additional gamescope command-line options for this specific wrapper.
                 Option names must match gamescope's flags exactly (e.g., "hdr-enabled").
                 These will be passed via the -x flag to gamescoperun.
+                Users can still pass additional -x flags when running the wrapper.
               '';
             };
 
@@ -127,9 +117,9 @@ in
             };
 
             useSystemd = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Enable systemd-run for this specific wrapper. Takes precedence over global defaultSystemd. When true, wraps the gamescope execution with systemd-run for better process isolation.";
+              type = lib.types.nullOr lib.types.bool;
+              default = null;
+              description = "Enable systemd-run for this specific wrapper. Takes precedence over global defaultSystemd. If null, uses global defaults.";
             };
 
             useHDR = lib.mkOption {
