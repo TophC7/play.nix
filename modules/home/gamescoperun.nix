@@ -75,7 +75,6 @@ let
   }
   // lib.optionalAttrs finalHDR {
     ENABLE_HDR_WSI = 1;
-    DXVK_HDR = 1;
     PROTON_ENABLE_HDR = 1;
   };
 
