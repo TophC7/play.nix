@@ -22,18 +22,15 @@ stdenv.mkDerivation {
       inherit (protonGeVersions) hash;
     };
 
-  buildCommand =
-    ''
-      mkdir -p $out/bin
-      tar -C $out/bin --strip=1 -x -f $src
-    ''
-    # Replace the internal name and display name
-    + lib.strings.optionalString (protonGeTitle != null) ''
-      sed -i -r 's|"proton-cachyos-[^"]*"|"${protonGeTitle}"|g' $out/bin/compatibilitytool.vdf
-      sed -i -r 's|"display_name"[[:space:]]*"[^"]*"|"display_name" "${protonGeTitle}"|' $out/bin/compatibilitytool.vdf
-    '';
-
-  passthru.updateScript = callPackage ./update.nix { };
+  buildCommand = ''
+    mkdir -p $out/bin
+    tar -C $out/bin --strip=1 -x -f $src
+  ''
+  # Replace the internal name and display name
+  + lib.strings.optionalString (protonGeTitle != null) ''
+    sed -i -r 's|"proton-cachyos-[^"]*"|"${protonGeTitle}"|g' $out/bin/compatibilitytool.vdf
+    sed -i -r 's|"display_name"[[:space:]]*"[^"]*"|"display_name" "${protonGeTitle}"|' $out/bin/compatibilitytool.vdf
+  '';
 
   meta = with lib; {
     description = "CachyOS Proton build with additional patches and optimizations";
