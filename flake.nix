@@ -29,6 +29,7 @@
 
       nixosModules = {
         play = import ./modules/nixos self;
+        procon2 = import ./modules/nixos/procon2.nix;
         default = self.nixosModules.play;
       };
 
@@ -55,6 +56,7 @@
         in
         {
           proton-cachyos = pkgs.callPackage ./pkgs/proton-cachyos { };
+          procon2-init = pkgs.callPackage ./pkgs/procon2 { };
           default = self.packages.${system}.proton-cachyos;
         }
       );
@@ -62,6 +64,7 @@
       # Overlay for packages
       overlays.default = final: prev: {
         proton-cachyos = final.callPackage ./pkgs/proton-cachyos { };
+        procon2-init = final.callPackage ./pkgs/procon2 { };
         # Add other packages here as needed
       };
     };

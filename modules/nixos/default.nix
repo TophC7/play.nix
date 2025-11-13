@@ -4,6 +4,7 @@ self: {
     ./ananicy.nix
     ./gamemode.nix
     ./lutris.nix
+    ./procon2.nix
     ./steam.nix
   ];
 
