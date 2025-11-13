@@ -26,7 +26,8 @@ let
     ;
 
   # Determine final HDR and WSI settings
-  finalHDR = cfg.defaultHDR || HDR;
+  # Precedence: defaultHDR (if explicitly set) > monitor HDR capability (fallback)
+  finalHDR = if cfg.defaultHDR != null then cfg.defaultHDR else HDR;
   finalWSI = cfg.defaultWSI;
 
   # Select gamescope packages based on useGit option
@@ -279,9 +280,13 @@ in
     };
 
     defaultHDR = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Default HDR setting for wrappers that don't specify useHDR. Also applies when monitor HDR is false but you want to override it globally.";
+      type = lib.types.nullOr lib.types.bool;
+      default = null;
+      description = ''
+        Default HDR setting for wrappers that don't specify useHDR.
+        - If null (default): Uses monitor HDR capability as fallback
+        - If true/false: Explicitly enables/disables HDR globally, overriding monitor settings
+      '';
     };
 
     defaultWSI = lib.mkOption {
