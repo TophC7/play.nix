@@ -10,8 +10,9 @@ A NixOS flake for gaming on Wayland with Gamescope integration and declarative c
 - **Application Wrappers**: Create custom game launchers that run through Gamescope
 - **Environment Control**: Dynamic environment variable discovery and display
 - **Nested Session Detection**: Intelligent handling when already inside Gamescope
-- **AMD GPU Support**: LACT daemon and performance optimizations  
+- **AMD GPU Support**: LACT daemon and performance optimizations
 - **Gaming Stack**: Steam with Proton-CachyOS, Lutris, Gamemode, and process scheduling
+- **Nintendo Switch 2 Pro Controller**: USB initialization support (requires button remapping via Steam Input)
 
 ## Installation
 
@@ -46,6 +47,7 @@ play = {
   lutris.enable = true;        # Lutris game manager
   gamemode.enable = true;      # Performance optimization
   ananicy.enable = true;       # Process scheduling
+  procon2.enable = true;       # Nintendo Switch 2 Pro Controller support
 };
 ```
 
@@ -84,7 +86,7 @@ play = {
       enable = true;
       
       # Global defaults for all wrappers (can be overridden per-wrapper)
-      defaultHDR = false;     # Global HDR setting (overrides monitor HDR if needed)
+      defaultHDR = null;      # null = auto-detect monitor HDR (default), true/false = force on/off
       defaultWSI = true;      # Global WSI (Wayland Surface Interface) setting
       defaultSystemd = false; # Global systemd-run setting
       
@@ -196,6 +198,21 @@ play = {
 }
 ```
 
+### Nintendo Switch 2 Pro Controller Support
+
+Enable USB initialization for Nintendo Switch 2 Pro Controller:
+
+```nix
+play.procon2.enable = true;
+```
+
+**Important Notes:**
+- Controller automatically initializes when connected via USB
+- **Button mapping is scrambled** - use Steam Input or similar tools to remap buttons
+- Based on [HandHeldLegend's procon2tool](https://github.com/HandHeldLegend/handheldlegend.github.io/tree/main/procon2tool)
+- USB only (Bluetooth not supported)
+- USB ID: 057e:2069
+
 ## Usage
 
 ```bash
@@ -231,7 +248,10 @@ The `gamescoperun` script automatically displays all relevant environment variab
 ### HDR/WSI/Systemd Configuration
 
 - **Global Defaults**: Set `defaultHDR`, `defaultWSI`, and `defaultSystemd` in `gamescoperun` configuration
+  - `defaultHDR = null` (default): Auto-detects monitor HDR capability
+  - `defaultHDR = true/false`: Forces HDR on/off globally
 - **Per-Wrapper Overrides**: Use `useHDR`, `useWSI`, and `useSystemd` in individual wrappers
+- **Environment Variables**: When HDR is enabled, sets `ENABLE_HDR_WSI=1` and `PROTON_ENABLE_HDR=1`
 - **Environment Communication**: Wrappers communicate with `gamescoperun` via environment variables
 
 ### Nested Session Detection  
@@ -244,7 +264,13 @@ If you're already inside a Gamescope session, `gamescoperun` intelligently detec
 - **Precedence**: Check wrapper-specific → global defaults → monitor settings
 - **Nested Sessions**: Commands run directly if already in Gamescope (check `$GAMESCOPE_WAYLAND_DISPLAY`)
 - **Configuration**: Ensure exactly one monitor has `primary = true` and `inputs` is available
-- **Steam Issues**: WSI and HDR can cause problems with Steam - try disabling them per-wrapper
+- **Steam Issues**: WSI and HDR can cause problems with Steam - try disabling them per-wrapper or globally
+
+## Current Versions
+
+- **Proton-CachyOS**: 10.0-20251107
+- **Gamescope**: Latest from Chaotic Nix
+- **ProCon 2 Support**: Based on HandHeldLegend procon2tool
 
 ## Requirements
 
