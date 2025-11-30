@@ -21,7 +21,7 @@
             example = 1080;
           };
           refreshRate = lib.mkOption {
-            type = lib.types.int;
+            type = lib.types.either lib.types.int lib.types.float;
             default = 60;
           };
           x = lib.mkOption {
@@ -50,8 +50,8 @@
             default = false;
           };
           vrr = lib.mkOption {
-            type = lib.types.bool;
-            description = "Variable Refresh Rate aka Adaptive Sync aka AMD FreeSync.";
+            type = lib.types.either lib.types.bool (lib.types.enum [ "on-demand" ]);
+            description = "Variable Refresh Rate aka Adaptive Sync aka AMD FreeSync. Can be a boolean or 'on-demand' for niri.";
             default = false;
           };
         };
@@ -59,13 +59,12 @@
     );
     default = [ ];
   };
-
   config = {
     assertions = [
       {
         assertion =
-          ((lib.length config.play.monitors) != 0)
-          -> ((lib.length (lib.filter (m: m.primary) config.play.monitors)) == 1);
+          ((lib.length config.monitors) != 0)
+          -> ((lib.length (lib.filter (m: m.primary) config.monitors)) == 1);
         message = "Exactly one monitor must be set to primary.";
       }
     ];
