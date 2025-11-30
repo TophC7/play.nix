@@ -22,6 +22,12 @@ rec {
 
   getPrimaryMonitor = monitors: lib.findFirst (m: m.primary) null monitors;
 
+  # Ensure a value is an integer, ceiling floats
+  toInt = value:
+    if builtins.isInt value then value
+    else if builtins.isFloat value then builtins.floor (lib.trivial.ceil value)
+    else builtins.floor value;
+
   getMonitorDefaults =
     monitors:
     let
@@ -30,7 +36,7 @@ rec {
     {
       WIDTH = if getPrimary != null then getPrimary.width else 1920;
       HEIGHT = if getPrimary != null then getPrimary.height else 1080;
-      REFRESH_RATE = if getPrimary != null then getPrimary.refreshRate else 60;
+      REFRESH_RATE = if getPrimary != null then toInt getPrimary.refreshRate else 60;
       VRR = if getPrimary != null then getPrimary.vrr else false;
       HDR = if getPrimary != null then getPrimary.hdr else false;
     };
