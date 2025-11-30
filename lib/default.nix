@@ -25,8 +25,7 @@ rec {
   # Ensure a value is an integer, ceiling floats
   toInt = value:
     if builtins.isInt value then value
-    else if builtins.isFloat value then builtins.floor (lib.trivial.ceil value)
-    else builtins.floor value;
+    else builtins.ceil value;
 
   getMonitorDefaults =
     monitors:
