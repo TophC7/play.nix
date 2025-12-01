@@ -1,7 +1,10 @@
+# Nintendo Switch 2 Pro Controller support
+# Package (procon2-init) comes directly from mix.nix
 {
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -9,7 +12,8 @@ with lib;
 
 let
   cfg = config.play.procon2;
-  procon2-init = pkgs.callPackage ../../pkgs/procon2 { };
+  # Package provided directly by mix.nix (no overlay needed for users)
+  procon2-init = inputs.mix-nix.packages.${pkgs.system}.procon2-init;
 in
 {
   options.play.procon2 = {

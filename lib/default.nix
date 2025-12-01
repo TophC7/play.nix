@@ -1,3 +1,8 @@
+# Gamescope-specific utilities for play.nix
+#
+# These utilities are specific to gamescope configuration and build on
+# the general monitor utilities from mix.nix (lib.desktop.monitors.*)
+#
 { lib, ... }:
 rec {
   # Helper to convert Nix attrs to gamescope command-line arguments
@@ -20,23 +25,21 @@ rec {
       lib.mapAttrsToList (name: value: "set -x ${name} '${toString value}'") attrs
     );
 
-  getPrimaryMonitor = monitors: lib.findFirst (m: m.primary) null monitors;
-
   # Ensure a value is an integer, ceiling floats
-  toInt = value:
-    if builtins.isInt value then value
-    else builtins.ceil value;
+  toInt = value: if builtins.isInt value then value else builtins.ceil value;
 
+  # Get monitor defaults for gamescope (uppercase convention)
+  # Transforms lib.desktop.monitors.getDefaults output to gamescope format
   getMonitorDefaults =
     monitors:
     let
-      getPrimary = getPrimaryMonitor monitors;
+      defaults = lib.desktop.monitors.getDefaults monitors;
     in
     {
-      WIDTH = if getPrimary != null then getPrimary.width else 1920;
-      HEIGHT = if getPrimary != null then getPrimary.height else 1080;
-      REFRESH_RATE = if getPrimary != null then toInt getPrimary.refreshRate else 60;
-      VRR = if getPrimary != null then getPrimary.vrr else false;
-      HDR = if getPrimary != null then getPrimary.hdr else false;
+      WIDTH = defaults.width;
+      HEIGHT = defaults.height;
+      REFRESH_RATE = defaults.refreshRate;
+      VRR = defaults.vrr;
+      HDR = defaults.hdr;
     };
 }

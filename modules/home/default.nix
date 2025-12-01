@@ -1,12 +1,46 @@
-self: {
+{ lib, flake }:
+{ config, pkgs, ... }:
+{
   imports = [
-    ./monitors.nix
+    # Use mix.nix monitors module instead of local monitors.nix
+    flake.inputs.mix-nix.homeManagerModules.monitors
     ./gamescoperun.nix
     ./wrappers.nix
   ];
 
-  # Pass inputs to all modules via _module.args
+  # Deprecated option for migration warning
+  options.play.monitors = lib.mkOption {
+    type = lib.types.listOf lib.types.anything;
+    default = [ ];
+    visible = false;
+    description = "DEPRECATED: Use 'monitors' instead of 'play.monitors'";
+  };
+
+  config = {
+    # Migration warning for users still using play.monitors
+    assertions = [
+      {
+        assertion = config.play.monitors == [ ];
+        message = ''
+          'play.monitors' has been removed in favor of 'monitors' from mix.nix.
+
+          Please update your configuration:
+
+            # Before
+            play.monitors = [ ... ];
+
+            # After
+            monitors = [ ... ];
+
+          The option schema remains the same, only the namespace changed.
+        '';
+      }
+    ];
+  };
+
+  # Pass play.nix's inputs to all modules via _module.args
   _module.args = {
-    inputs = self.inputs;
+    inputs = flake.inputs;
+    playLib = flake.lib;
   };
 }

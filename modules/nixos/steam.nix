@@ -1,5 +1,5 @@
 # Steam module with gaming optimizations
-# Automatically includes proton-cachyos package
+# Automatically includes proton-cachyos package (from mix.nix)
 {
   pkgs,
   lib,
@@ -11,8 +11,8 @@
 let
   cfg = config.play.steam;
 
-  # Import proton packages directly, some users wont chaotics overlay
-  proton-cachyos = pkgs.callPackage ../../pkgs/proton-cachyos { };
+  # Packages come directly from mix.nix (no overlay needed for users)
+  proton-cachyos = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos;
   proton-ge-custom = inputs.chaotic.legacyPackages.${pkgs.system}.proton-ge-custom;
 
   defaultCompatPackages = [

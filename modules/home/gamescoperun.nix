@@ -3,20 +3,19 @@
   config,
   pkgs,
   inputs,
+  playLib,
   ...
 }:
 ## Test the package
 # nix build .#proton-cachyos --no-link
 let
-  # Extend lib with play utilities
-  playLib = import ../../lib { inherit lib; };
-
   cfg = config.play.gamescoperun;
 
-  # Use shared lib functions
+  # Use shared lib functions from play.nix lib (passed via _module.args)
   inherit (playLib) toCliArgs getMonitorDefaults;
 
-  monitorDefaults = getMonitorDefaults config.play.monitors;
+  # Use mix.nix monitors (config.monitors) instead of play.monitors
+  monitorDefaults = getMonitorDefaults config.monitors;
   inherit (monitorDefaults)
     WIDTH
     HEIGHT
@@ -349,11 +348,11 @@ in
     # Assertion to ensure monitors are configured if gamescoperun is enabled
     assertions = [
       {
-        assertion = cfg.enable -> (lib.length config.play.monitors > 0);
-        message = "play.gamescoperun requires at least one monitor to be configured in play.monitors";
+        assertion = cfg.enable -> (lib.length config.monitors > 0);
+        message = "play.gamescoperun requires at least one monitor to be configured in monitors";
       }
       {
-        assertion = cfg.enable -> (lib.length (lib.filter (m: m.primary) config.play.monitors) == 1);
+        assertion = cfg.enable -> (lib.length (lib.filter (m: m.primary) config.monitors) == 1);
         message = "play.gamescoperun requires exactly one primary monitor to be configured";
       }
     ];

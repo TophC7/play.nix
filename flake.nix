@@ -3,6 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    mix-nix = {
+      url = "github:tophc7/mix.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -15,17 +19,17 @@
     {
       self,
       nixpkgs,
+      mix-nix,
       chaotic,
       ...
     }@inputs:
     let
-      forAllSystems = nixpkgs.lib.genAttrs [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
+      # Use mix.nix's extended lib
+      lib = mix-nix.lib;
     in
     {
-      lib = import ./lib { inherit (nixpkgs) lib; };
+      # Export play.nix specific lib utilities (gamescope helpers)
+      lib = import ./lib { inherit lib; };
 
       nixosModules = {
         play = import ./modules/nixos self;
@@ -34,7 +38,10 @@
       };
 
       homeManagerModules = {
-        play = import ./modules/home self;
+        play = import ./modules/home {
+          inherit lib;
+          flake = self;
+        };
         default = self.homeManagerModules.play;
       };
 
@@ -44,28 +51,6 @@
           ./test-config.nix
           self.nixosModules.play
         ];
-      };
-
-      packages = forAllSystems (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ self.overlays.default ];
-          };
-        in
-        {
-          proton-cachyos = pkgs.callPackage ./pkgs/proton-cachyos { };
-          procon2-init = pkgs.callPackage ./pkgs/procon2 { };
-          default = self.packages.${system}.proton-cachyos;
-        }
-      );
-
-      # Overlay for packages
-      overlays.default = final: prev: {
-        proton-cachyos = final.callPackage ./pkgs/proton-cachyos { };
-        procon2-init = final.callPackage ./pkgs/procon2 { };
-        # Add other packages here as needed
       };
     };
 }
