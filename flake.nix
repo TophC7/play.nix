@@ -43,13 +43,5 @@
         };
         default = self.homeManagerModules.play;
       };
-
-      nixosConfigurations.test = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          ./test-config.nix
-          self.nixosModules.play
-        ];
-      };
     };
 }
