@@ -36,6 +36,8 @@ Add to your `flake.nix`:
 }
 ```
 
+> **Note**: play.nix uses [mix.nix](https://github.com/tophc7/mix.nix) internally for packages and monitor utilities. You don't need to add mix.nix to your inputs - it's handled automatically.
+
 ## Configuration
 
 ### NixOS Configuration
@@ -64,38 +66,39 @@ play = {
 }:
 {
   imports = [
-    inputs.play.homeManagerModules.play
+    inputs.play-nix.homeManagerModules.play
+  ];
+
+  # Configure monitors for automatic gamescope settings
+  # Note: This is a top-level option, not under 'play'
+  monitors = [
+    {
+      name = "DP-1";
+      primary = true;
+      width = 2560;
+      height = 1440;
+      refreshRate = 144;
+      hdr = true;
+      vrr = true;
+    }
   ];
 
   play = {
-    # Configure monitors for automatic gamescope settings
-    monitors = [
-      {
-        name = "DP-1";
-        primary = true;
-        width = 2560;
-        height = 1440;
-        refreshRate = 144;
-        hdr = true;
-        vrr = true;
-      }
-    ];
-
     # Enable gamescope wrapper
     gamescoperun = {
       enable = true;
-      
+
       # Global defaults for all wrappers (can be overridden per-wrapper)
       defaultHDR = null;      # null = auto-detect monitor HDR (default), true/false = force on/off
       defaultWSI = true;      # Global WSI (Wayland Surface Interface) setting
       defaultSystemd = false; # Global systemd-run setting
-      
+
       # Optional: Override base gamescope options
       baseOptions = {
         "fsr-upscaling" = true;
         "output-width" = 2560;   # Overrides monitor-derived width
       };
-      
+
       # Optional: Override environment variables
       environment = {
         CUSTOM_VAR = "value";
@@ -112,12 +115,12 @@ play = {
         # Also as of 07/23, steam does not open in normal "desktop mode" with gamescope
         # You can however exit big picture mode once already open to access the normal ui
         command = "${lib.getExe osConfig.programs.steam.package} -bigpicture -tenfoot";
-        
+
         # Per-wrapper overrides (null = use global defaults)
         useHDR = true;        # Override: force HDR for Steam
         useWSI = null;        # Use global defaultWSI setting
         useSystemd = true;    # Override: use systemd-run for Steam
-        
+
         extraOptions = {
           "steam" = true; # equivalent to --steam flag
         };
@@ -130,12 +133,12 @@ play = {
       lutris-gamescope = {
         enable = true;
         package = osConfig.play.lutris.package; # play.nix provides readonly packages
-        
+
         # Per-wrapper configuration
         useHDR = false;       # Override: disable HDR for Lutris
         useWSI = true;        # Override: ensure WSI is enabled
         useSystemd = null;    # Use global defaultSystemd setting
-        
+
         extraOptions = {
           "force-windows-fullscreen" = true;
         };
@@ -147,7 +150,7 @@ play = {
       heroic-gamescope = {
         enable = true;
         package = pkgs.heroic;
-        
+
         # Use all global defaults by omitting override options
         extraOptions."fsr-upscaling" = true;
       };
@@ -236,7 +239,7 @@ GAMESCOPE_EXTRA_OPTS="--steam" gamescoperun steam
 The configuration follows a clear precedence hierarchy:
 
 1. **Wrapper-specific settings** (`useHDR`, `useWSI`, `useSystemd`) - highest priority
-2. **Global defaults** (`defaultHDR`, `defaultWSI`, `defaultSystemd`) 
+2. **Global defaults** (`defaultHDR`, `defaultWSI`, `defaultSystemd`)
 3. **Monitor configuration** (HDR, VRR settings) - lowest priority
 
 ### Environment Display
@@ -254,9 +257,25 @@ The `gamescoperun` script automatically displays all relevant environment variab
 - **Environment Variables**: When HDR is enabled, sets `ENABLE_HDR_WSI=1` and `PROTON_ENABLE_HDR=1`
 - **Environment Communication**: Wrappers communicate with `gamescoperun` via environment variables
 
-### Nested Session Detection  
+### Nested Session Detection
 
 If you're already inside a Gamescope session, `gamescoperun` intelligently detects this and runs commands directly without nesting.
+
+## Migration from Previous Versions
+
+### `play.monitors` → `monitors`
+
+The monitor configuration has moved from `play.monitors` to a top-level `monitors` option (provided by [mix.nix](https://github.com/tophc7/mix.nix)):
+
+```nix
+# Before
+play.monitors = [{ name = "DP-1"; ... }];
+
+# After
+monitors = [{ name = "DP-1"; ... }];
+```
+
+The option schema remains the same - only the namespace changed. If you still have `play.monitors` configured, you'll receive a helpful error message guiding you to migrate.
 
 ## Troubleshooting
 
