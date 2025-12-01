@@ -53,7 +53,7 @@ let
     output-width = WIDTH;
     rt = true;
   }
-  // lib.optionalAttrs VRR {
+  // lib.optionalAttrs (VRR != false) {
     adaptive-sync = true;
   };
 
