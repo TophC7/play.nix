@@ -8,12 +8,14 @@
     ./wrappers.nix
   ];
 
-  # Deprecated option for migration warning
-  options.play.monitors = lib.mkOption {
-    type = lib.types.listOf lib.types.anything;
-    default = [ ];
-    visible = false;
-    description = "DEPRECATED: Use 'monitors' instead of 'play.monitors'";
+  options = {
+    # Deprecated option for migration warning
+    play.monitors = lib.mkOption {
+      type = lib.types.listOf lib.types.anything;
+      default = [ ];
+      visible = false;
+      description = "DEPRECATED: Use 'monitors' instead of 'play.monitors'";
+    };
   };
 
   config = {
@@ -36,11 +38,11 @@
         '';
       }
     ];
-  };
 
-  # Pass play.nix's inputs to all modules via _module.args
-  _module.args = {
-    inputs = flake.inputs;
-    playLib = flake.lib;
+    # Pass play.nix's inputs to all modules via _module.args
+    _module.args = {
+      inputs = flake.inputs;
+      playLib = flake.lib;
+    };
   };
 }
