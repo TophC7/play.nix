@@ -62,18 +62,20 @@ let
 
   # Base environment variables
   defaultEnvironment = {
-    SDL_VIDEODRIVER = "wayland";
     AMD_VULKAN_ICD = "RADV";
-    RADV_PERFTEST = "aco";
     DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1 = 1;
     DISABLE_LAYER_NV_OPTIMUS_1 = 1;
-    PROTON_ADD_CONFIG = "sdlinput,wayland";
     GAMESCOPE_WAYLAND_DISPLAY = "gamescope-0";
+    PROTON_ADD_CONFIG = "sdlinput,wayland";
+    PROTON_ENABLE_WAYLAND = 1;
+    RADV_PERFTEST = "aco";
+    SDL_VIDEODRIVER = "wayland";
   }
   // lib.optionalAttrs finalWSI {
     ENABLE_GAMESCOPE_WSI = 1;
   }
   // lib.optionalAttrs finalHDR {
+    DXVK_HDR = 1;
     ENABLE_HDR_WSI = 1;
     PROTON_ENABLE_HDR = 1;
   };
@@ -220,7 +222,26 @@ let
     end
 
     if test "$add_hdr_flags" = "true"
-        set -a final_args --hdr-enabled --hdr-debug-force-output --hdr-debug-force-support --hdr-itm-enable
+        set -a final_args --hdr-enabled --hdr-debug-force-output --hdr-debug-force-support
+    end
+
+    # Track WSI status for workaround detection
+    set -l wsi_enabled false
+    if set -q GAMESCOPE_USE_WSI
+        if test "$GAMESCOPE_USE_WSI" = "true" -o "$GAMESCOPE_USE_WSI" = "1"
+            set wsi_enabled true
+        end
+    else if test "${if finalWSI then "true" else "false"}" = "true"
+        set wsi_enabled true
+    end
+
+    # Wayland backend + WSI + HDR workaround
+    # When all three are active, the child process needs DISABLE_HDR_WSI=1
+    # to trick gamescope into properly enabling HDR
+    set -l needs_hdr_workaround false
+    set -l current_backend "${finalBaseOptions.backend or "sdl"}"
+    if test "$current_backend" = "wayland" -a "$wsi_enabled" = "true" -a "$add_hdr_flags" = "true"
+        set needs_hdr_workaround true
     end
 
     # Add user-provided extra arguments (primary method)
@@ -253,12 +274,19 @@ let
     # Execute gamescope with assembled configuration
     set -l gamescope_cmd ${lib.getExe gamescopePackages.gamescope}
 
+    # Build child command, applying HDR workaround if needed
+    set -l child_cmd $argv
+    if test "$needs_hdr_workaround" = "true"
+        echo -e "\033[1;35m[gamescoperun]\033[0m Applying wayland+WSI+HDR workaround (DISABLE_HDR_WSI=1 for child)"
+        set child_cmd env DISABLE_HDR_WSI=1 $argv
+    end
+
     if test "$use_systemd" = "true"
-        echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34msystemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY\033[0m $gamescope_cmd $final_args \033[1;32m--\033[0m $argv"
-        exec systemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY $gamescope_cmd $final_args -- $argv
+        echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34msystemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY\033[0m $gamescope_cmd $final_args \033[1;32m--\033[0m $child_cmd"
+        exec systemd-run --user --quiet --same-dir --service-type=exec --setenv=DISPLAY --setenv=WAYLAND_DISPLAY $gamescope_cmd $final_args -- $child_cmd
     else
-        echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m$gamescope_cmd\033[0m $final_args \033[1;32m--\033[0m $argv"
-        exec $gamescope_cmd $final_args -- $argv
+        echo -e "\033[1;36m[gamescoperun]\033[0m Running: \033[1;34m$gamescope_cmd\033[0m $final_args \033[1;32m--\033[0m $child_cmd"
+        exec $gamescope_cmd $final_args -- $child_cmd
     end
   '';
 in
