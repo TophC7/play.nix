@@ -1,6 +1,8 @@
 # 🎮 play.nix
 
-A NixOS flake for gaming on Wayland with Gamescope integration and declarative configuration.
+> A NixOS flake for gaming on Wayland with Gamescope integration and declarative configuration.
+> 
+> [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TophC7/play.nix)
 
 ## Features
 
