@@ -1,5 +1,5 @@
 # Steam module with gaming optimizations
-# Automatically includes proton-cachyos package (from mix.nix)
+# Automatically includes proton-cachyos and proton-cachyos-v4 packages (from mix.nix)
 {
   pkgs,
   lib,
@@ -13,11 +13,11 @@ let
 
   # Packages come directly from mix.nix (no overlay needed for users)
   proton-cachyos = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos;
-  proton-ge-custom = inputs.chaotic.legacyPackages.${pkgs.system}.proton-ge-custom;
+  proton-cachyos-v4 = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos.v4;
 
   defaultCompatPackages = [
     proton-cachyos
-    proton-ge-custom
+    proton-cachyos-v4
   ];
 
   finalCompatPackages = defaultCompatPackages ++ cfg.extraCompatPackages;

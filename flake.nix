@@ -7,7 +7,6 @@
       url = "github:tophc7/mix.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -19,7 +18,6 @@
       self,
       nixpkgs,
       mix-nix,
-      chaotic,
       ...
     }@inputs:
     let

@@ -33,8 +33,8 @@ let
   gamescopePackages =
     if cfg.useGit then
       {
-        gamescope = inputs.chaotic.legacyPackages.${pkgs.system}.gamescope_git;
-        gamescope-wsi = inputs.chaotic.legacyPackages.${pkgs.system}.gamescope-wsi_git;
+        gamescope = inputs.mix-nix.packages.${pkgs.system}.gamescope-git;
+        gamescope-wsi = inputs.mix-nix.packages.${pkgs.system}.gamescope-git.wsi;
       }
     else
       {
@@ -297,7 +297,7 @@ in
     useGit = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Use git versions of gamescope from chaotic-nyx for latest features";
+      description = "Use git versions of gamescope from mix.nix for latest features";
     };
 
     defaultSystemd = lib.mkOption {

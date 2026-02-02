@@ -24,14 +24,12 @@ Add to your `flake.nix`:
 {
   inputs = {
     play-nix.url = "github:TophC7/play.nix";
-    # chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable"; # Not needed, but useful
   };
 
-  outputs = { play-nix, chaotic, ... }: {
+  outputs = { play-nix, ... }: {
     nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
       modules = [
         play-nix.nixosModules.play
-        # chaotic.nixosModules.default
       ];
     };
   };
