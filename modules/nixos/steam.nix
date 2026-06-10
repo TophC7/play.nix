@@ -10,10 +10,11 @@
 
 let
   cfg = config.play.steam;
+  system = pkgs.stdenv.hostPlatform.system;
 
   # Packages come directly from mix.nix (no overlay needed for users)
-  proton-cachyos = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos;
-  proton-cachyos-v4 = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos.v4;
+  proton-cachyos = inputs.mix-nix.packages.${system}.proton-cachyos;
+  proton-cachyos-v4 = inputs.mix-nix.packages.${system}.proton-cachyos.v4;
 
   defaultCompatPackages = [
     proton-cachyos
@@ -42,10 +43,10 @@ in
       default =
         pkgs: with pkgs; [
           # X11 libraries
-          xorg.libXcursor
-          xorg.libXi
-          xorg.libXinerama
-          xorg.libXScrnSaver
+          libxcursor
+          libxi
+          libxinerama
+          libxscrnsaver
 
           # System libraries
           stdenv.cc.cc.lib

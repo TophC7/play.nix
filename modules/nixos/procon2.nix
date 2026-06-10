@@ -12,8 +12,10 @@ with lib;
 
 let
   cfg = config.play.procon2;
+  system = pkgs.stdenv.hostPlatform.system;
+
   # Package provided directly by mix.nix (no overlay needed for users)
-  procon2-init = inputs.mix-nix.packages.${pkgs.system}.procon2-init;
+  procon2-init = inputs.mix-nix.packages.${system}.procon2-init;
 in
 {
   options.play.procon2 = {

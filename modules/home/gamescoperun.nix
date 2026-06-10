@@ -10,6 +10,7 @@
 # nix build .#proton-cachyos --no-link
 let
   cfg = config.play.gamescoperun;
+  system = pkgs.stdenv.hostPlatform.system;
 
   # Use shared lib functions from play.nix lib (passed via _module.args)
   inherit (playLib) toCliArgs getMonitorDefaults;
@@ -33,8 +34,8 @@ let
   gamescopePackages =
     if cfg.useGit then
       {
-        gamescope = inputs.mix-nix.packages.${pkgs.system}.gamescope-git;
-        gamescope-wsi = inputs.mix-nix.packages.${pkgs.system}.gamescope-git.wsi;
+        gamescope = inputs.mix-nix.packages.${system}.gamescope-git;
+        gamescope-wsi = inputs.mix-nix.packages.${system}.gamescope-git.wsi;
       }
     else
       {
