@@ -13,11 +13,11 @@ let
 
   # Packages come directly from mix.nix (no overlay needed for users)
   proton-cachyos = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos;
-  proton-cachyos-v4 = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos.v4;
+  proton-cachyos-v3 = inputs.mix-nix.packages.${pkgs.system}.proton-cachyos.v3;
 
   defaultCompatPackages = [
     proton-cachyos
-    proton-cachyos-v4
+    proton-cachyos-v3
   ];
 
   finalCompatPackages = defaultCompatPackages ++ cfg.extraCompatPackages;
