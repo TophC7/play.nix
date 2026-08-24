@@ -4,8 +4,8 @@ self: {
     ./ananicy.nix
     ./gamemode.nix
     ./lutris.nix
-    ./procon2.nix
     ./steam.nix
+    ./switch2-controllers.nix
   ];
 
   # Pass inputs to all modules via _module.args

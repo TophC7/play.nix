@@ -30,7 +30,6 @@
 
       nixosModules = {
         play = import ./modules/nixos self;
-        procon2 = import ./modules/nixos/procon2.nix;
         default = self.nixosModules.play;
       };
 

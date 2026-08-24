@@ -14,7 +14,7 @@
 - **Nested Session Detection**: Intelligent handling when already inside Gamescope
 - **AMD GPU Support**: LACT daemon and performance optimizations
 - **Gaming Stack**: Steam with Proton-CachyOS, Lutris, Gamemode, and process scheduling
-- **Nintendo Switch 2 Pro Controller**: USB initialization support (requires button remapping via Steam Input)
+- **Nintendo Switch 2 Controllers**: Wireless Pro Controller 2 and NSO GameCube support with rumble, motion, and battery reporting
 
 ## Installation
 
@@ -49,7 +49,11 @@ play = {
   lutris.enable = true;        # Lutris game manager
   gamemode.enable = true;      # Performance optimization
   ananicy.enable = true;       # Process scheduling
-  procon2.enable = true;       # Nintendo Switch 2 Pro Controller support
+
+  switch2Controllers = {
+    enable = true;             # Wireless Nintendo Switch 2 controllers
+    user = "toph";             # User that pairs and owns the controller config
+  };
 };
 ```
 
@@ -201,20 +205,40 @@ play = {
 }
 ```
 
-### Nintendo Switch 2 Pro Controller Support
+### Nintendo Switch 2 Controller Support
 
-Enable USB initialization for Nintendo Switch 2 Pro Controller:
+Enable the wireless bridge for the user who will pair controllers:
 
 ```nix
-play.procon2.enable = true;
+play.switch2Controllers = {
+  enable = true;
+  user = "toph";
+};
 ```
 
-**Important Notes:**
-- Controller automatically initializes when connected via USB
-- **Button mapping is scrambled** - use Steam Input or similar tools to remap buttons
-- Based on [HandHeldLegend's procon2tool](https://github.com/HandHeldLegend/handheldlegend.github.io/tree/main/procon2tool)
-- USB only (Bluetooth not supported)
-- USB ID: 057e:2069
+After rebuilding, hold the controller's sync button, then run the one-shot
+pairing service. It pauses the bridge while pairing and restarts it afterward:
+
+```fish
+sudo systemctl start switch2-controllers-pair
+```
+
+The service starts automatically on later boots once
+`~/.config/nso-gc/config.json` exists.
+
+**Supported hardware and features:**
+- Nintendo Switch 2 Pro Controller and NSO GameCube controller are tested
+- Buttons, sticks, rumble, gyro/accelerometer, and battery reporting
+- Joy-Con 2 support remains experimental upstream
+- Bluetooth LE only; the retired USB initializer is no longer provided
+
+Inspect runtime state with:
+
+```fish
+switch2-controllers list
+systemctl status switch2-controllers
+journalctl -u switch2-controllers-pair -u switch2-controllers -f
+```
 
 ## Usage
 
@@ -289,7 +313,7 @@ The option schema remains the same - only the namespace changed. If you still ha
 
 - **Proton-CachyOS**: 10.0-20251107
 - **Gamescope**: Latest from Chaotic Nix
-- **ProCon 2 Support**: Based on HandHeldLegend procon2tool
+- **Switch 2 Controllers**: Pinned from trevlars/switch2-controllers-linux
 
 ## Requirements
 
