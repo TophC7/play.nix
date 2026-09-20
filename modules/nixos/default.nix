@@ -3,6 +3,7 @@ self: {
     ./amd.nix
     ./ananicy.nix
     ./gamemode.nix
+    ./heroic.nix
     ./lutris.nix
     ./procon2.nix
     ./steam.nix

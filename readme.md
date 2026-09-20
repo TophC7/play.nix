@@ -47,6 +47,7 @@ play = {
   amd.enable = true;           # AMD GPU optimization
   steam.enable = true;         # Steam with Proton-CachyOS
   lutris.enable = true;        # Lutris game manager
+  heroic.enable = true;        # Heroic games launcher
   gamemode.enable = true;      # Performance optimization
   ananicy.enable = true;       # Process scheduling
   procon2.enable = true;       # Nintendo Switch 2 Pro Controller support
@@ -154,9 +155,14 @@ play = {
 
       heroic-gamescope = {
         enable = true;
-        package = pkgs.heroic;
+        package = osConfig.play.heroic.package;
 
-        # Use all global defaults by omitting override options
+        # Per-wrapper configuration
+        useHDR = false;       # Override: disable HDR for Heroic
+        useWSI = true;        # Override: ensure WSI is enabled
+        useSystemd = null;    # Use global defaultSystemd setting
+
+        # Use all global defaults by omitting override optionHeroic
         extraOptions."fsr-upscaling" = true;
       };
     };
