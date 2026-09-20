@@ -21,15 +21,11 @@ let
 in
 {
   options.play.lutris = {
-    enable = lib.mkEnableOption "Install Lutris game manager";
+    enable = lib.mkEnableOption "Install Lutris games manager";
 
     extraPkgs = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      example = with pkgs; [
-        mangohud
-        gamemode
-      ];
       description = "Additional extra packages for Lutris runtime (added to defaults)";
     };
 
