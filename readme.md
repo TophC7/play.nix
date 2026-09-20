@@ -13,7 +13,7 @@
 - **Environment Control**: Dynamic environment variable discovery and display
 - **Nested Session Detection**: Intelligent handling when already inside Gamescope
 - **AMD GPU Support**: LACT daemon and performance optimizations
-- **Gaming Stack**: Steam with Proton-CachyOS, Lutris, Gamemode, and process scheduling
+- **Gaming Stack**: Steam with Proton-CachyOS/GE, Lutris, Heroic, Mangohud, Gamemode, and process scheduling
 - **Nintendo Switch 2 Pro Controller**: USB initialization support (requires button remapping via Steam Input)
 
 ## Installation
@@ -45,8 +45,8 @@ Add to your `flake.nix`:
 ```nix
 play = {
   amd.enable = true;           # AMD GPU optimization
-  steam.enable = true;         # Steam with Proton-CachyOS
-  lutris.enable = true;        # Lutris game manager
+  steam.enable = true;         # Steam with Proton-CachyOS/GE
+  lutris.enable = true;        # Lutris games manager
   heroic.enable = true;        # Heroic games launcher
   gamemode.enable = true;      # Performance optimization
   ananicy.enable = true;       # Process scheduling
@@ -72,6 +72,7 @@ play = {
 
   # Configure monitors for automatic gamescope settings
   # Note: This is a top-level option, not under 'play'
+  # Mix-nix required
   monitors = [
     {
       name = "DP-1";
@@ -272,22 +273,6 @@ The `gamescoperun` script automatically displays all relevant environment variab
 
 If you're already inside a Gamescope session, `gamescoperun` intelligently detects this and runs commands directly without nesting.
 
-## Migration from Previous Versions
-
-### `play.monitors` → `monitors`
-
-The monitor configuration has moved from `play.monitors` to a top-level `monitors` option (provided by [mix.nix](https://github.com/tophc7/mix.nix)):
-
-```nix
-# Before
-play.monitors = [{ name = "DP-1"; ... }];
-
-# After
-monitors = [{ name = "DP-1"; ... }];
-```
-
-The option schema remains the same - only the namespace changed. If you still have `play.monitors` configured, you'll receive a helpful error message guiding you to migrate.
-
 ## Troubleshooting
 
 - **Environment Variables**: Run any wrapper to see current configuration displayed at startup
@@ -296,19 +281,11 @@ The option schema remains the same - only the namespace changed. If you still ha
 - **Configuration**: Ensure exactly one monitor has `primary = true` and `inputs` is available
 - **Steam Issues**: WSI and HDR can cause problems with Steam - try disabling them per-wrapper or globally
 
-## Current Versions
-
-- **Proton-CachyOS**: 10.0-20251107
-- **Gamescope**: Latest from Chaotic Nix
-- **ProCon 2 Support**: Based on HandHeldLegend procon2tool
-
 ## Requirements
 
 - **NixOS** with Home Manager (as a NixOS module)
-- **Chaotic Nix** (for latest Gamescope and Proton-GE) - optional but recommended
 - **Wayland** desktop environment
-- **Fish Shell** (used internally by wrappers and gamescoperun)
-- At least one monitor configured with `primary = true`
+- At least one [monitor](https://github.com/TophC7/mix.nix#monitors) configured with `primary = true`
 
 ## 🤝 Contributing
 
