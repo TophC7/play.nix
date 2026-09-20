@@ -5,6 +5,7 @@
     flake.inputs.mix-nix.homeManagerModules.monitors
     ./gamescoperun.nix
     ./wrappers.nix
+    ./mangohud.nix
   ];
 
   config = {

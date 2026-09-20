@@ -38,7 +38,6 @@
     libpng
     libpulseaudio
     libvorbis
-    mangohud
   ];
 
   configuredSteam = pkgs.steam.override {

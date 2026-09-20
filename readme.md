@@ -84,6 +84,11 @@ play = {
   ];
 
   play = {
+    mangohud = {
+      enable = true;
+      preset = "minimal"; # minimal, full, or debug
+    };
+
     # Enable gamescope wrapper
     gamescoperun = {
       enable = true;
