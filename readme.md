@@ -285,22 +285,6 @@ The `gamescoperun` script automatically displays all relevant environment variab
 
 If you're already inside a Gamescope session, `gamescoperun` intelligently detects this and runs commands directly without nesting.
 
-## Migration from Previous Versions
-
-### `play.monitors` → `monitors`
-
-The monitor configuration has moved from `play.monitors` to a top-level `monitors` option (provided by [mix.nix](https://github.com/tophc7/mix.nix)):
-
-```nix
-# Before
-play.monitors = [{ name = "DP-1"; ... }];
-
-# After
-monitors = [{ name = "DP-1"; ... }];
-```
-
-The option schema remains the same - only the namespace changed. If you still have `play.monitors` configured, you'll receive a helpful error message guiding you to migrate.
-
 ## Troubleshooting
 
 - **Environment Variables**: Run any wrapper to see current configuration displayed at startup

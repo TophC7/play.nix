@@ -19,12 +19,32 @@ let
   defaultCompatPackages = [
     proton-cachyos
     proton-cachyos-v3
+    pkgs.proton-ge-bin
   ];
 
   finalCompatPackages = defaultCompatPackages ++ cfg.extraCompatPackages;
 
+  defaultExtraPkgs = with pkgs; [
+    # X11 libraries
+    libxcursor
+    libxi
+    libxinerama
+    libxscrnsaver
+
+    # System libraries
+    stdenv.cc.cc.lib
+    gamemode
+    gperftools
+    keyutils
+    libkrb5
+    libpng
+    libpulseaudio
+    libvorbis
+    mangohud
+  ];
+
   configuredSteam = pkgs.steam.override {
-    extraPkgs = cfg.extraPkgs;
+    extraPkgs = pkgs: defaultExtraPkgs ++ cfg.extraPkgs;
   };
 in
 {
@@ -34,32 +54,15 @@ in
     extraCompatPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
-      example = with pkgs; [ proton-ge-bin ];
+      example = with pkgs; [ luxtorpeda ];
       description = "Additional Proton compatibility packages to add to the defaults";
     };
 
     extraPkgs = lib.mkOption {
-      type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default =
-        pkgs: with pkgs; [
-          # X11 libraries
-          libxcursor
-          libxi
-          libxinerama
-          libxscrnsaver
-
-          # System libraries
-          stdenv.cc.cc.lib
-          gamemode
-          gperftools
-          keyutils
-          libkrb5
-          libpng
-          libpulseaudio
-          libvorbis
-          mangohud
-        ];
-      description = "Extra packages to include in Steam's runtime";
+      type = lib.types.listOf lib.types.package;
+      default = [ ];
+      example = with pkgs; [ gamescope ];
+      description = "Additional extra packages for Steam runtime (added to defaults)";
     };
 
     package = lib.mkOption {

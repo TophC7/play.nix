@@ -9,7 +9,7 @@ let
   cfg = config.play.lutris;
 
   defaultExtraPkgs = with pkgs; [
-    wineWowPackages.waylandFull
+    wineWow64Packages.waylandFull
     winetricks
     vulkan-tools
     xterm
