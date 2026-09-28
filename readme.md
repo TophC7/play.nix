@@ -13,7 +13,7 @@
 - **Environment Control**: Dynamic environment variable discovery and display
 - **Nested Session Detection**: Intelligent handling when already inside Gamescope
 - **AMD GPU Support**: LACT daemon and performance optimizations
-- **Gaming Stack**: Steam with Proton-CachyOS, Lutris, Gamemode, and process scheduling
+- **Gaming Stack**: Steam with Proton-CachyOS and GE-Proton, Lutris, Heroic (sharing Steam's Proton builds), Gamemode, and process scheduling
 - **Nintendo Switch 2 Controllers**: Wireless Pro Controller 2 and NSO GameCube support with rumble, motion, and battery reporting
 
 ## Installation
@@ -45,8 +45,11 @@ Add to your `flake.nix`:
 ```nix
 play = {
   amd.enable = true;           # AMD GPU optimization
-  steam.enable = true;         # Steam with Proton-CachyOS
+  steam.enable = true;         # Steam with Proton-CachyOS and GE-Proton
   lutris.enable = true;        # Lutris game manager
+  heroic.enable = true;        # Heroic, with Steam's Proton builds linked into
+                               # ~/.config/heroic/tools/proton for every user
+                               # under stable names (e.g. proton-cachyos)
   gamemode.enable = true;      # Performance optimization
   ananicy.enable = true;       # Process scheduling
 
@@ -153,7 +156,7 @@ play = {
 
       heroic-gamescope = {
         enable = true;
-        package = pkgs.heroic;
+        package = osConfig.play.heroic.package; # play.nix NixOS option
 
         # Use all global defaults by omitting override options
         extraOptions."fsr-upscaling" = true;
